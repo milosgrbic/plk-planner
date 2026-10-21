@@ -369,11 +369,11 @@ label{font-size:13px;color:var(--mute);display:grid;gap:4px}
 </dialog>
 <dialog id="dlgGh">
   <h4>Čuvanje na GitHub-u</h4>
-  <p>Plan se automatski čuva u privatnoj repozitoriji <b>milosgrbic/plk-planner</b> (grana „podaci“). Čuva se samo trenutno stanje, bez istorije: kad obrišete dan, stari podaci nestaju.</p>
+  <p>Plan se automatski čuva u privatnoj repozitoriji <b>milosgrbic/plk-podaci</b> (grana „podaci“). Čuva se samo trenutno stanje, bez istorije: kad obrišete dan, stari podaci nestaju.</p>
   <ol>
     <li>Otvorite <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">pravljenje GitHub ključa</a>.</li>
     <li>Ime: npr. „Planer“. Rok: najduži ponuđen.</li>
-    <li>Repository access: <b>Only select repositories</b> → plk-planner.</li>
+    <li>Repository access: <b>Only select repositories</b> → plk-podaci.</li>
     <li>Permissions → Repository → <b>Contents: Read and write</b>.</li>
     <li>Kliknite „Generate token“ i nalepite ključ ovde.</li>
   </ol>
@@ -942,7 +942,7 @@ function saveFile(){
 const filePayload=()=>({app:'ordination-planner',version:2,savedAt:new Date().toISOString(),data:{docs:S.docs,shifts:S.shifts,holters:S.holters,scopes:S.scopes}});
 
 /* ---- automatsko čuvanje na GitHub-u: grana „podaci“ uvek ima samo jedan zapis (bez istorije) ---- */
-const GH_REPO='milosgrbic/plk-planner',GH_BRANCH='podaci',GH_FILE='plan.json',GH_KEY=KEY+'-gh';
+const GH_REPO='milosgrbic/plk-podaci',GH_BRANCH='podaci',GH_FILE='plan.json',GH_KEY=KEY+'-gh';
 let ghTok='',ghTimer=null,ghPending=false,ghBusy=false,ghAgain=false,ghErr='',ghAt=null,ghRetry=null;
 try{ghTok=localStorage.getItem(GH_KEY)||''}catch(e){}
 async function gh(path,opt={}){
@@ -952,7 +952,7 @@ async function gh(path,opt={}){
 }
 const ghPost=(path,body,method='POST')=>gh(path,{method,body:JSON.stringify(body)});
 const hhmm=d=>d.toLocaleTimeString('sr-Latn',{hour:'2-digit',minute:'2-digit'});
-const ghWhy=e=>e.status===401?'GitHub ključ nije ispravan ili je istekao.':e.status===403||e.status===404?'Ključ nema dozvolu za repozitoriju '+GH_REPO+' (Contents: Read and write).':'Nema veze sa GitHub-om (internet?).';
+const ghWhy=e=>e.status===401?'GitHub ključ nije ispravan ili je istekao.':e.status===403||e.status===404?'Repozitorija '+GH_REPO+' ne postoji ili ključ nema dozvolu za nju (Contents: Read and write).':'Nema veze sa GitHub-om (internet?).';
 function ghStat(){
   const s=$('fileStat');let t='',k='';
   $('ghLbl').textContent=ghTok?'GitHub':'Poveži GitHub';
@@ -967,6 +967,11 @@ function ghQueue(){
   ghPending=true;clearTimeout(ghTimer);ghStat();
   ghTimer=setTimeout(ghWrite,1500);   /* više brzih izmena ide u jedan upis */
 }
+async function ghInit(){   /* potpuno prazna repozitorija (bez ijednog zapisa) ne prima upise, pa se prvo doda README */
+  if(ghInit.ok)return;
+  try{await gh('/git/trees',{method:'POST',body:JSON.stringify({tree:[{path:'x',mode:'100644',type:'blob',content:''}]})});ghInit.ok=true}
+  catch(e){if(e.status!==409)throw e;await ghPost('/contents/README.md',{message:'Početak',content:btoa('Podaci planera ordinacija\n')},'PUT');ghInit.ok=true}
+}
 async function ghWrite(){
   clearTimeout(ghTimer);
   if(!ghTok)return;
@@ -974,6 +979,7 @@ async function ghWrite(){
   ghBusy=true;ghAgain=false;ghPending=false;ghStat();
   const tok=ghTok;
   try{
+    await ghInit();
     const tree=await ghPost('/git/trees',{tree:[{path:GH_FILE,mode:'100644',type:'blob',content:JSON.stringify(filePayload(),null,2)}]});
     const c=await ghPost('/git/commits',{message:'Plan',tree:tree.sha,parents:[]});   /* bez roditelja: prethodno stanje se ne čuva */
     try{await ghPost('/git/refs/heads/'+GH_BRANCH,{sha:c.sha,force:true},'PATCH')}
