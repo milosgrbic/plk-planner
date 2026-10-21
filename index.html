@@ -369,11 +369,11 @@ label{font-size:13px;color:var(--mute);display:grid;gap:4px}
 </dialog>
 <dialog id="dlgGh">
   <h4>Čuvanje na GitHub-u</h4>
-  <p>Plan se automatski čuva u privatnoj repozitoriji <b>milosgrbic/plk-podaci</b> (grana „podaci“). Čuva se samo trenutno stanje, bez istorije: kad obrišete dan, stari podaci nestaju.</p>
+  <p>Plan se automatski čuva u repozitoriji <b>milosgrbic/plk-planner</b> (grana „podaci“), <b>šifrovan vašim ključem</b>: iako je repozitorija javna, bez ključa niko ne može da ga pročita. Čuva se samo trenutno stanje, bez istorije: kad obrišete dan, stari podaci nestaju.</p>
   <ol>
     <li>Otvorite <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">pravljenje GitHub ključa</a>.</li>
     <li>Ime: npr. „Planer“. Rok: najduži ponuđen.</li>
-    <li>Repository access: <b>Only select repositories</b> → plk-podaci.</li>
+    <li>Repository access: <b>Only select repositories</b> → plk-planner.</li>
     <li>Permissions → Repository → <b>Contents: Read and write</b>.</li>
     <li>Kliknite „Generate token“ i nalepite ključ ovde.</li>
   </ol>
@@ -942,7 +942,7 @@ function saveFile(){
 const filePayload=()=>({app:'ordination-planner',version:2,savedAt:new Date().toISOString(),data:{docs:S.docs,shifts:S.shifts,holters:S.holters,scopes:S.scopes}});
 
 /* ---- automatsko čuvanje na GitHub-u: grana „podaci“ uvek ima samo jedan zapis (bez istorije) ---- */
-const GH_REPO='milosgrbic/plk-podaci',GH_BRANCH='podaci',GH_FILE='plan.json',GH_KEY=KEY+'-gh';
+const GH_REPO='milosgrbic/plk-planner',GH_BRANCH='podaci',GH_FILE='plan.json',GH_KEY=KEY+'-gh';
 let ghTok='',ghTimer=null,ghPending=false,ghBusy=false,ghAgain=false,ghErr='',ghAt=null,ghRetry=null;
 try{ghTok=localStorage.getItem(GH_KEY)||''}catch(e){}
 async function gh(path,opt={}){
@@ -980,7 +980,7 @@ async function ghWrite(){
   const tok=ghTok;
   try{
     await ghInit();
-    const tree=await ghPost('/git/trees',{tree:[{path:GH_FILE,mode:'100644',type:'blob',content:JSON.stringify(filePayload(),null,2)}]});
+    const tree=await ghPost('/git/trees',{tree:[{path:GH_FILE,mode:'100644',type:'blob',content:JSON.stringify(await ghLock(filePayload()))}]});
     const c=await ghPost('/git/commits',{message:'Plan',tree:tree.sha,parents:[]});   /* bez roditelja: prethodno stanje se ne čuva */
     try{await ghPost('/git/refs/heads/'+GH_BRANCH,{sha:c.sha,force:true},'PATCH')}
     catch(e){if(e.status!==422&&e.status!==404)throw e;await ghPost('/git/refs',{ref:'refs/heads/'+GH_BRANCH,sha:c.sha})}   /* prvi upis: grana još ne postoji */
@@ -999,10 +999,27 @@ function ghFail(e){
   if(!ghRetry)ghRetry=setInterval(()=>{if(ghPending&&!ghBusy)ghWrite()},30000);
 }
 window.addEventListener('online',()=>{if(ghTok&&ghPending)ghWrite()});
-async function ghRead(){   /* vraća {state,savedAt} ili null ako na GitHub-u još nema plana */
+/* šifrovanje: repozitorija je javna, pa se plan šalje zaključan (AES-GCM, šifra izvedena iz GitHub ključa) */
+const b64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode(...u.subarray(i,i+8192));return btoa(s)};
+const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function ghCipher(salt,use){
+  const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(ghTok),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,[use]);
+}
+async function ghLock(obj){
+  const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  const c=await crypto.subtle.encrypt({name:'AES-GCM',iv},await ghCipher(salt,'encrypt'),new TextEncoder().encode(JSON.stringify(obj)));
+  return {app:'ordination-planner',enc:'AES-GCM',salt:b64(salt),iv:b64(iv),data:b64(new Uint8Array(c))};
+}
+async function ghUnlock(o){   /* null: plan je zaključan drugim (starim) ključem */
+  try{const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv)},await ghCipher(unb64(o.salt),'decrypt'),unb64(o.data));return JSON.parse(new TextDecoder().decode(p))}
+  catch(e){return null}
+}
+async function ghRead(){   /* vraća {state,savedAt}, {locked:true} ako se ne može otključati, ili null ako na GitHub-u još nema plana */
   let t;
   try{t=await gh('/contents/'+GH_FILE+'?ref='+GH_BRANCH,{raw:true})}catch(e){if(e.status===404)return null;throw e}
-  const raw=JSON.parse(t);
+  let raw=JSON.parse(t);
+  if(raw&&raw.enc){raw=await ghUnlock(raw);if(!raw)return {locked:true}}
   if(!raw||raw.app!=='ordination-planner'||!raw.data)throw new Error('Plan na GitHub-u nije ispravan.');
   return {state:normalizeState(raw.data).state,savedAt:Date.parse(raw.savedAt)||0};
 }
@@ -1012,6 +1029,7 @@ async function ghSync(){   /* pri otvaranju: noviji podaci (GitHub ili pregleda�
   ghBusy=true;ghStat();let f;
   try{f=await ghRead()}catch(e){ghBusy=false;ghPending=true;ghFail(e);ghStat();return}
   ghBusy=false;ghAgain=false;
+  if(f&&f.locked)f=null;   /* zaključan drugim ključem: zamenjuje se trenutnim planom */
   if(f&&!ghPending&&!sameData(f.state,S)&&f.savedAt>(Number(localStorage.getItem(KEY+'-at'))||0)){useState(f.state,f.savedAt);toast('Učitan je plan sa GitHub-a.')}
   else if(ghPending||!f||!sameData(f.state,S))ghWrite();
   else{ghAt=new Date(f.savedAt);ghStat()}
@@ -1038,6 +1056,10 @@ $('ghOk').onclick=async()=>{
   try{f=await ghRead()}catch(e){ghTok=old;$('ghOk').disabled=false;$('ghErr').textContent=e.status?ghWhy(e):e.message||ghWhy(e);return}
   $('ghOk').disabled=false;$('dlgGh').close();
   let load=false;
+  if(f&&f.locked){
+    if(!await askConfirm('Plan na GitHub-u je zaključan',`Plan na GitHub-u je sačuvan drugim (starim) ključem i ne može se pročitati.\n\nZameniti ga onim što je sada u programu?`,'Zameni trenutnim')){ghTok=old;return}
+    f=null;
+  }
   if(f&&!sameData(f.state,S)){
     load=await askConfirm('Na GitHub-u već postoji plan',`Plan na GitHub-u sadrži: ${f.state.docs.length} lekara, ${f.state.shifts.length} termina, ${f.state.holters.length} pacijenata za holtere, ${f.state.scopes.length} skopija.\n\nUčitati plan sa GitHub-a, ili ga zameniti onim što je sada u programu?`,'Učitaj sa GitHub-a','Zameni trenutnim');
     if(load===null){ghTok=old;return}   /* zatvoren prozor: ništa se ne menja */
