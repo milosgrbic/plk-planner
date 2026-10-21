@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planer ordinacija</title>
+<style>
+:root{--bg:#e8edeb;--panel:#fbfcfb;--ink:#1b2a2c;--mute:#667679;--line:#d2dbd9;--teal:#0d6a6d;--tealbg:#d8ebe9;--warn:#b93d0b}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{font:15px/1.4 "Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);display:grid;grid-template-columns:310px 1fr}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+aside{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;height:100vh}
+aside h1{font:600 20px Georgia,serif;margin:0;padding:18px 16px 4px}
+aside p.sub{margin:0;padding:0 16px 12px;color:var(--mute);font-size:13px}
+input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.chips{display:flex;gap:6px;margin:10px 0 0}
+.chips .btn{padding:5px 12px}
+.tin{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+select{font:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+.lt.on{opacity:1;color:var(--teal)}
+.bdgs{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.bdgs .badge{margin:0}
+.badge.svb{background:#c5e1de;color:var(--teal)}
+.svb svg,.nb svg{width:11px;height:11px;margin-right:4px;vertical-align:-1px}
+.slot .nm small.gpn{font-style:italic}
+.slot .nm small.gpn.set{font-style:normal;font-weight:700;color:var(--teal)}
+.doc.joker{border-left-color:#d9902b;background:#fff8ea}
+.badge.nb{background:#ffe3b8;color:#8a4b00;cursor:help}
+.x.lt.nbtn:hover{background:#ffe3b8;color:#8a4b00}
+#dlgNote{width:min(480px,92vw)}
+.today{display:block;margin-top:2px;font-size:14px;font-weight:700;color:var(--teal)}
+#ntDel{margin-right:auto}
+.ta{position:relative}
+#ntText{padding-bottom:26px}
+.cnt{position:absolute;right:10px;bottom:22px;font-size:11px;color:var(--mute);background:#fff;padding:1px 5px;border-radius:4px;pointer-events:none}
+.cnt.warn{color:#b26a00;font-weight:700}
+.cnt.full{color:var(--warn);font-weight:700}
+.slot.done{background:#e3e8e7}
+.slot.done .tm{color:#8a9798}
+.slot.done .nm b{color:#7b8a8c}
+.slot.done .badge{filter:grayscale(1);opacity:.7}
+.slot.done.late{box-shadow:inset 3px 0 0 #b9c3c2}
+.slot.compact{flex-wrap:nowrap;justify-content:flex-start;align-items:center;gap:5px;padding:3px 3px 3px 8px;font-size:12px;background:#e3e8e7;color:#7b8a8c;box-shadow:none}
+.slot.compact .ctm{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;color:#8a9798}
+.slot.compact .cnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot.compact .clt{white-space:nowrap;font-size:11px;color:#8a9798}
+.slot.compact .cundo{display:flex;padding:2px 3px;color:#7b8a8c}
+.slot.compact .cundo svg{width:14px;height:14px}
+.slot.compact .cundo:hover{background:#cfdad8;color:var(--ink)}
+#tip{position:fixed;z-index:50;background:var(--ink);color:#fff;font-size:13px;line-height:1.35;padding:7px 10px;border-radius:7px;white-space:pre-line;pointer-events:none;opacity:0;transition:opacity .08s;max-width:260px;left:0;top:0}
+#tip.on{opacity:1}
+.ssrow{display:flex;align-items:center;gap:10px;padding:7px 8px 7px 12px;background:var(--tealbg);border-radius:6px;margin-bottom:6px}
+.ssrow b{color:var(--teal);font-variant-numeric:tabular-nums}
+.ssrow span{flex:1;min-width:0}
+.ssl{font-size:13px;color:var(--mute);margin:14px 0 6px}
+.picks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.picks em{color:var(--mute);font-size:13px;font-style:normal}
+.pick{position:relative;display:inline-block;font-size:14px;color:var(--ink)}
+.pick input{position:absolute;opacity:0;width:0;height:0}
+.pick span{display:inline-block;padding:5px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer}
+.pick input:checked+span{background:var(--teal);border-color:var(--teal);color:#fff}
+.pick input:focus-visible+span{outline:2px solid var(--teal);outline-offset:2px}
+.row1{display:flex;gap:10px;align-items:end}
+.row1 label{flex:1}
+.io{display:flex;gap:8px;margin-left:auto}
+.io .btn{display:flex;align-items:center;gap:7px;padding:7px 13px}
+.btn.ghost.danger{color:var(--warn);border-color:#e3b9aa}
+.btn.ghost.danger:hover{background:#fbe9e3}
+.io svg{width:16px;height:16px}
+.tin.bad{border-color:var(--warn);background:#fdf1ec}
+.terr{color:var(--warn);font-size:12px;line-height:1.3}
+.lower{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:0;align-items:stretch}
+.lower .hol{margin-top:0;container-type:inline-size;display:flex;flex-direction:column}
+#holList,#skList{flex:1;display:flex;flex-direction:column}
+#holList .hint,#skList .hint{margin:auto 0}
+#dlgSwap{width:min(440px,92vw)}
+.swbtns{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px;margin-top:6px}
+.swbtns .btn[hidden]{display:none}
+.swno{display:block;margin:14px auto 0;border:0;background:none;color:var(--mute);font-size:14px;text-decoration:underline;padding:6px 12px;border-radius:6px}
+.swno:hover{color:var(--ink)}
+@media(max-width:1000px){.lower{grid-template-columns:minmax(0,1fr)}}
+@container (max-width:480px){.hrow{grid-template-columns:auto 70px minmax(0,1fr) auto}.hrow .x{grid-column:4;grid-row:1}.hrow .tags{grid-column:2/-1;grid-row:2}}
+.hol .skh{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.skr{display:flex;align-items:center;gap:12px;margin-left:auto}
+.beds{text-align:right;font-size:13px;color:var(--mute)}
+.beds b{font-size:24px;line-height:1;color:var(--teal);margin:0 4px 0 6px;vertical-align:-3px}
+.beds.neg b{color:var(--warn)}
+.bwarn{color:var(--warn);font-weight:700;font-size:13px;margin-top:3px}
+.srow{display:grid;grid-template-columns:62px minmax(0,1fr) auto auto;gap:6px 10px;align-items:center;padding:9px 6px;border-top:1px solid var(--line)}
+.srow .tm{font-weight:700;font-variant-numeric:tabular-nums;color:var(--teal);border:0;background:none;padding:0;text-decoration:underline dotted;justify-self:start}
+.srow .sn{min-width:0}
+.srow .pn{display:block;max-width:100%;border:0;background:none;padding:0;text-align:left;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow small{display:block;color:var(--mute);line-height:1.3}
+.cks{display:flex;gap:12px}
+.ck{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap}
+.ck input{width:18px;height:18px;margin:0;accent-color:var(--teal)}
+.srow.in{background:#fdf3e3;box-shadow:inset 3px 0 0 #d9902b}
+.srow.out{opacity:.6}
+@container (max-width:410px){.srow{grid-template-columns:62px minmax(0,1fr) auto}.srow .x{grid-column:3;grid-row:1}.srow .cks{grid-column:2/-1;grid-row:2}}
+.dock{flex:none;margin:0 -20px;border-top:1px solid var(--line);background:var(--panel);box-shadow:0 -6px 16px rgba(20,35,36,.07)}
+.dockbar{display:flex;align-items:center;gap:18px;width:100%;padding:10px 20px;border:0;background:none;text-align:left;font-weight:600}
+.dockbar:hover{background:var(--tealbg)}
+.dockbar .ds{display:flex;gap:6px 18px;flex-wrap:wrap;flex:1;color:var(--mute);font-weight:400;font-size:13px}
+.dockbar .ds b{color:var(--ink);margin-left:4px}
+.dwarn{font-weight:700;color:var(--warn)}
+.dock.neg .dbed b{color:var(--warn)}
+.chev{width:30px;height:30px;padding:5px;box-sizing:border-box;border-radius:50%;background:var(--teal);color:#fff;flex:none;transition:transform .15s,background .15s}
+.dockbar:hover .chev{background:#0a5052}
+.dock.open .chev{transform:rotate(180deg)}
+.dockbody{max-height:46vh;overflow-y:auto;padding:14px 20px 16px;background:var(--bg);border-top:1px solid var(--line)}
+.dockbody[hidden]{display:none}
+.an{color:var(--teal);font-weight:700}
+.slot.clash{background:#fbe0d8;box-shadow:inset 3px 0 0 var(--warn),0 0 0 1px #e9a894}
+.slot.clash .tm{color:var(--warn)}
+.slot.clash.done{background:#efdcd6}
+.badge.cl{background:var(--warn);color:#fff}
+.notice{flex:none;display:flex;align-items:center;gap:12px;background:#fff3d4;border:1px solid #e6c062;color:#5c4200;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px}
+.notice[hidden]{display:none}
+.notice span{flex:1}
+.notice .btn{padding:5px 12px}
+.hrow .tm.nt,.srow .tm.nt{font-size:11px;font-weight:600;line-height:1.1;color:var(--mute);text-decoration:none;text-align:left}
+.credit{flex:none;margin:0 -20px;padding:4px 20px 6px;background:var(--panel);border-top:1px solid var(--line);text-align:right;font-size:12px;color:var(--mute)}
+#dlgPdf{width:min(540px,92vw)}
+textarea{display:block;width:100%;min-height:150px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit;line-height:1.4;resize:vertical;margin-bottom:14px}
+textarea:focus{border-color:var(--teal);outline:none}
+.addbox[hidden]{display:none}
+.addtoggle{margin:0 16px 12px;width:calc(100% - 32px)}
+.chk{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--ink);cursor:pointer}
+.chk input{width:auto;margin:0;accent-color:var(--teal)}
+fieldset.opt{border:1px solid var(--line);border-radius:8px;margin:12px 0 0;padding:6px 12px 10px;display:flex;gap:22px;flex-wrap:wrap}
+fieldset.opt legend{font-size:13px;color:var(--mute);padding:0 4px}
+.hol{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 14px 8px;min-width:0}
+.hol header{align-items:center}
+.hol h2 em{font:400 14px "Segoe UI",system-ui,sans-serif;font-style:normal;color:var(--mute);margin-left:6px}
+.hrow{display:grid;grid-template-columns:auto 70px minmax(0,1fr) auto auto;gap:6px 12px;align-items:center;padding:9px 4px;border-top:1px solid var(--line)}
+.hrow .tm{font-weight:700;font-variant-numeric:tabular-nums;color:var(--teal);border:0;background:none;padding:0;text-decoration:underline dotted;justify-self:start}
+.hrow .hn{min-width:0}
+.hrow .hn .pn{display:block;max-width:100%}
+.hrow .hn small{display:block;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hrow .pn{border:0;background:none;padding:0;text-align:left;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dn{width:20px;height:20px;margin:0;accent-color:var(--teal);cursor:pointer}
+.hrow.done .pn{text-decoration:line-through;color:var(--mute)}
+.hrow.done .tm{color:var(--mute)}
+.hrow.done .tags{opacity:.55}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tg{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;border:1px solid var(--line);background:#fff}
+.tg.stavlja{background:var(--tealbg);border-color:var(--tealbg);color:var(--teal)}
+.tg.skida{background:#f6e3c8;border-color:#f6e3c8;color:#8a5a0b}
+
+.foot{padding:10px 12px;border-top:1px solid var(--line)}
+.foot .btn{width:100%}
+.btn{background:var(--teal);color:#fff;border:0;border-radius:6px;padding:8px 14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+input[type=text]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.search{position:relative;margin:0 16px 12px}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--mute);pointer-events:none}
+.search input{display:block;width:100%;padding:10px 38px 10px 40px;border:1px solid var(--line);border-radius:999px;background:#eaf0ee;-webkit-appearance:none;appearance:none}
+.search input:focus{background:#fff;border-color:var(--teal)}
+.search input::-webkit-search-cancel-button,.search input::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
+.qx{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:50%;background:#cfdad8;color:var(--ink);font-size:16px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
+.qx:hover{background:var(--teal);color:#fff}
+.qx[hidden]{display:none}
+.addbox{margin:0 12px 10px;padding:12px;background:var(--tealbg);border:1px solid #b7d5d2;border-radius:10px;display:grid;gap:8px}
+.addbox h2{margin:0;font-size:14px;font-weight:600;color:var(--teal)}
+.addbox .btn{width:100%}
+#docs{border-top:1px solid var(--line);flex:1;overflow-y:auto;padding:10px 12px;margin:0;list-style:none;display:grid;gap:6px;align-content:start}
+.doc{display:flex;align-items:center;gap:8px;padding:9px 10px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;cursor:grab}
+.doc:active{cursor:grabbing}
+.doc .t{flex:1;min-width:0}
+.doc b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc small{color:var(--mute)}
+.grp{position:sticky;top:-10px;z-index:1;background:var(--panel);display:flex;justify-content:space-between;align-items:baseline;padding:12px 2px 5px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);border-bottom:1px solid var(--line)}
+.grp em{font-style:normal;font-weight:400;color:var(--mute)}
+.addbox input.bad,.addbox select.bad{border-color:var(--warn);background:#fdf1ec}
+.x{border:0;background:none;color:var(--mute);font-size:18px;line-height:1;padding:2px 6px;border-radius:4px}
+.x:hover{background:#f1dcd4;color:var(--warn)}
+.empty{color:var(--mute);padding:10px;font-size:14px}
+main{height:100vh;display:flex;flex-direction:column;overflow:hidden;padding:18px 20px 0;min-width:0}
+.ordarea{flex:1;min-height:0;overflow-y:auto;margin:0 -20px;padding:0 20px 16px}
+main header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px 16px;margin-bottom:14px}
+main h2{margin:0;font:600 20px Georgia,serif}
+main header span{color:var(--mute);font-size:13px}
+#grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media(max-width:1250px){#grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){#grid{grid-template-columns:1fr}}
+.ord{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:250px;min-width:0;overflow:hidden;display:flex;flex-direction:column;transition:background .12s,border-color .12s}
+.ord.over{background:var(--tealbg);border-color:var(--teal);border-style:dashed}
+.ord h3{margin:0;padding:11px 12px;font-size:15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.ord h3 span{outline:none;flex:1;min-width:0;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ord h3 em{font-style:normal;color:var(--mute);font-weight:400;font-size:13px}
+.slots{padding:8px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-content:start;flex:1}
+.hint{color:var(--mute);font-size:13px;text-align:center;padding:30px 10px}
+.slot{background:var(--tealbg);border-radius:6px;padding:7px 8px 7px 10px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 4px;align-items:center;cursor:grab;min-width:0}
+.slot .tm{font-weight:700;font-variant-numeric:tabular-nums;color:var(--teal);white-space:nowrap;border:0;background:none;padding:0;text-decoration:underline dotted;justify-self:start}
+.slot .nm{flex:1 1 100%;min-width:0}
+.slot .nm b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .nm small{display:block;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acts2{display:flex;align-items:center;margin-left:auto}
+.acts2 .x{padding:2px 2px}
+.slot .tm{font-size:13.5px}
+.lt{opacity:0;transition:opacity .12s;display:flex}
+.lt svg{width:14px;height:14px}
+.slot:hover .lt,.slot:focus-within .lt,.lt:focus-visible{opacity:1}
+@media(hover:none){.lt{opacity:1}}
+.x.lt:hover{background:#c5e1de;color:var(--teal)}
+.badge{margin-top:3px;border:0;background:#f6d9cb;color:var(--warn);font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
+.slot.late{box-shadow:inset 3px 0 0 var(--warn)}
+dialog{border:0;border-radius:12px;padding:20px;width:min(360px,92vw);box-shadow:0 20px 50px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(20,35,36,.45)}
+dialog h4{margin:0 0 2px;font:600 18px Georgia,serif}
+dialog p{margin:0 0 14px;color:var(--mute);font-size:13px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+label{font-size:13px;color:var(--mute);display:grid;gap:4px}
+.err{color:var(--warn);font-size:13px;min-height:18px;margin-bottom:8px}
+.acts{display:flex;justify-content:flex-end;gap:8px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+#toast.on{opacity:1}
+@media(max-width:760px){body{grid-template-columns:1fr;grid-template-rows:auto 1fr}aside,main{height:auto}aside{max-height:46vh}main{overflow:visible}.ordarea{overflow:visible}.dockbody{max-height:none!important}}
+</style>
+</head>
+<body>
+<aside>
+  <h1>Lekari</h1>
+  <p class="sub">Prevucite lekara na ordinaciju.</p>
+  <div class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>
+    <input type="search" id="q" placeholder="Pretraži lekare…" aria-label="Pretraži lekare" autocomplete="off">
+    <button class="qx" id="qClear" type="button" aria-label="Obriši pretragu" title="Obriši pretragu" hidden>×</button>
+  </div>
+  <button class="btn ghost addtoggle" id="toggleAdd" type="button" aria-expanded="false" aria-controls="addForm">+ Novi lekar</button>
+  <form class="addbox" id="addForm" hidden novalidate>
+    <h2>Novi lekar</h2>
+    <input type="text" id="newName" placeholder="Ime i prezime" aria-label="Ime i prezime" aria-required="true" autocomplete="off">
+    <select id="newSpec" aria-label="Specijalizacija" aria-required="true"></select>
+    <div class="err" id="addErr" role="alert" style="margin:0"></div>
+    <button class="btn" type="submit">+ Dodaj lekara</button>
+  </form>
+  <ul id="docs"></ul>
+  <div class="foot"><button class="btn" id="pdfBtn" type="button">Izvezi u PDF</button></div>
+</aside>
+<main>
+  <div class="notice" id="notice" role="alert" hidden><span id="noticeText"></span><button class="btn" id="noticeBtn" type="button" hidden>Osveži podatke</button><button class="x" id="noticeX" type="button" aria-label="Zatvori">×</button></div>
+  <header>
+    <div class="hl"><h2>Ordinacije</h2><span class="today" id="today"></span></div>
+    <div class="io"><button class="btn ghost danger" id="clearBtn" type="button" title="Briše sve unete termine, holtere i skopije"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Obriši sve</button><button class="btn ghost" id="saveBtn" type="button" title="Sačuva sve (lekare, ordinacije, termine, usluge i holtere) u jednu datoteku"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/></svg>Sačuvaj</button><button class="btn ghost" id="loadBtn" type="button" title="Učita ranije sačuvanu datoteku i zameni trenutno stanje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 20h14"/></svg>Učitaj</button><input type="file" id="loadFile" accept=".json,application/json" hidden></div></header>
+  <div class="ordarea"><div id="grid"></div></div>
+  <section class="dock" id="dock" aria-label="Holteri i skopije">
+    <button class="dockbar" id="dockBar" type="button" aria-expanded="false" aria-controls="dockBody" title="Prikaži ili sakrij holtere i skopije">
+      <span>Holteri i skopije</span>
+      <span class="ds"><span>Holteri<b id="dsHol">0</b></span><span>Skopije<b id="dsSk">0</b></span><span class="dbed">Slobodni kreveti<b id="dsBed">4</b></span><span class="dwarn" id="dsWarn"></span></span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+    </button>
+    <div class="dockbody" id="dockBody" hidden>
+  <div class="lower">
+  <section class="hol" aria-labelledby="holT">
+    <header><h2 id="holT">Holteri <em id="holCount">0</em></h2><button class="btn" id="addHol" type="button">+ Dodaj pacijenta</button></header>
+    <div id="holList"></div>
+  </section>
+  <section class="hol sk" aria-labelledby="skT">
+    <header class="skh"><h2 id="skT">Skopije <em id="skCount">0</em></h2>
+      <div class="skr">
+        <div class="beds" id="beds"><span class="bl">Slobodni kreveti:</span><b id="bedFree">4</b><div class="bwarn" id="bedWarn" role="alert"></div></div>
+        <button class="btn" id="addSk" type="button">+ Dodaj pacijenta</button>
+      </div>
+    </header>
+    <div id="skList"></div>
+  </section>
+  </div>
+    </div>
+  </section>
+  <div class="credit">Napravljeno s ljubavlju, Miloš</div>
+</main>
+
+<dialog id="dlg">
+  <h4 id="dTitle"></h4>
+  <p id="dSub"></p>
+  <div class="row">
+    <label>Od<input type="text" class="tin" id="tStart" inputmode="numeric" maxlength="5" placeholder="08:00" autocomplete="off"></label>
+    <label>Do<input type="text" class="tin" id="tEnd" inputmode="numeric" maxlength="5" placeholder="12:00" autocomplete="off"></label>
+  </div>
+  <label id="gpWrap" hidden style="margin-bottom:12px">Dodeli lekara opšte prakse ovom terminu<select id="gpSel" aria-label="Lekar opšte prakse"></select></label>
+  <div class="err" id="dErr"></div>
+  <div class="acts">
+    <button class="btn ghost" id="dCancel" type="button">Otkaži</button>
+    <button class="btn" id="dOk" type="button">Sačuvaj</button>
+  </div>
+</dialog>
+<dialog id="dlgLate">
+  <h4>Kašnjenje lekara</h4>
+  <p id="lSub"></p>
+  <label>Kašnjenje u minutima<input type="number" id="lMin" min="0" max="600" step="1" inputmode="numeric" placeholder="0"></label>
+  <div class="chips"><button type="button" class="btn ghost" data-chip="5">5 min</button><button type="button" class="btn ghost" data-chip="10">10 min</button><button type="button" class="btn ghost" data-chip="15">15 min</button><button type="button" class="btn ghost" data-chip="30">30 min</button></div>
+  <p style="margin:10px 0 14px">Upišite 0 da uklonite kašnjenje.</p>
+  <div class="acts"><button class="btn ghost" id="lCancel" type="button">Otkaži</button><button class="btn" id="lOk" type="button">Sačuvaj</button></div>
+</dialog>
+<dialog id="dlgSlotSvc">
+  <h4>Usluge u terminu</h4>
+  <p id="ssSub"></p>
+  <div id="ssList"></div>
+  <div class="ssl">Dodaj uslugu</div>
+  <div class="picks" id="ssPicks"></div>
+  <div class="row1"><label>Vreme usluge (24h)<input type="text" class="tin" id="ssTime" inputmode="numeric" maxlength="5" placeholder="08:30" autocomplete="off"></label><button class="btn" id="ssOk" type="button">Dodaj</button></div>
+  <div class="err" id="ssErr" style="margin-top:8px"></div>
+  <div class="acts"><button class="btn ghost" id="ssClose" type="button">Zatvori</button></div>
+</dialog>
+<dialog id="dlgSk">
+  <h4 id="skTitle">Dodaj pacijenta</h4>
+  <p>Upišite pacijenta, izaberite skopiju i satnicu.</p>
+  <label>Ime i prezime pacijenta<input type="text" id="skName" autocomplete="off"></label>
+  <fieldset class="opt"><legend>Skopija (može i oba)</legend>
+    <label class="chk"><input type="checkbox" id="skColo"> Kolonoskopija</label>
+    <label class="chk"><input type="checkbox" id="skGastro"> Gastroskopija</label>
+  </fieldset>
+  <fieldset class="opt"><legend>Anestezija</legend>
+    <label class="chk"><input type="checkbox" id="skAnes"> Sa anestezijom</label>
+  </fieldset>
+  <label style="margin-top:12px">Satnica (24h) · 00:00 = bez određenog vremena<input type="text" class="tin" id="skTime" inputmode="numeric" maxlength="5" placeholder="08:30" autocomplete="off"></label>
+  <div class="err" id="skErr" style="margin-top:8px"></div>
+  <div class="acts"><button class="btn ghost" id="skCancel" type="button">Otkaži</button><button class="btn" id="skOk" type="button">Sačuvaj</button></div>
+</dialog>
+<dialog id="dlgHol">
+  <h4 id="hTitle">Dodaj pacijenta</h4>
+  <p>Izaberite holter, radnju i satnicu.</p>
+  <label>Ime i prezime pacijenta<input type="text" id="hName" autocomplete="off"></label>
+  <label style="margin-top:12px">Kardiolog kod kog se stavlja holter<select id="hDoc" aria-label="Kardiolog"></select></label>
+  <fieldset class="opt"><legend>Holter</legend>
+    <label class="chk"><input type="checkbox" id="hEkg"> EKG</label>
+    <label class="chk"><input type="checkbox" id="hTa"> TA</label>
+  </fieldset>
+  <fieldset class="opt"><legend>Radnja</legend>
+    <label class="chk"><input type="radio" name="hAct" value="stavlja" checked> Stavlja</label>
+    <label class="chk"><input type="radio" name="hAct" value="skida"> Skida</label>
+  </fieldset>
+  <label style="margin-top:12px">Satnica (24h) · 00:00 = bez određenog vremena<input type="text" class="tin" id="hTime" inputmode="numeric" maxlength="5" placeholder="08:30" autocomplete="off"></label>
+  <div class="err" id="hErr" style="margin-top:8px"></div>
+  <div class="acts"><button class="btn ghost" id="hCancel" type="button">Otkaži</button><button class="btn" id="hOk" type="button">Sačuvaj</button></div>
+</dialog>
+<dialog id="dlgSwap">
+  <h4>Termin je zauzet</h4>
+  <p id="swText"></p>
+  <div class="swbtns"><button class="btn" id="swSwap" type="button" title="Lekari međusobno menjaju ordinacije">Zameni ordinacije</button><button class="btn ghost" id="swAdd" type="button" title="Oba termina ostaju u ordinaciji, označena crveno">Samo dodaj</button></div>
+  <button class="swno" id="swNo" type="button">Otkaži</button>
+</dialog>
+<dialog id="dlgNote">
+  <h4>Napomena</h4>
+  <p id="ntSub"></p>
+  <div class="ta"><textarea id="ntText" rows="6" placeholder="Napomena kolegama za ovog doktora…"></textarea><span class="cnt" id="ntCount" aria-live="polite">0/500</span></div>
+  <div class="acts"><button class="btn ghost" id="ntDel" type="button" hidden>Obriši napomenu</button><button class="btn ghost" id="ntCancel" type="button">Otkaži</button><button class="btn" id="ntOk" type="button" title="Prečica: Ctrl+Enter">Sačuvaj</button></div>
+</dialog>
+<dialog id="dlgPdf">
+  <h4>Izvoz u PDF</h4>
+  <p>Napomena (nije obavezna) se ispisuje na kraju dokumenta, u posebnoj sekciji „Napomena“.</p>
+  <textarea id="pdfNote" rows="8" placeholder="Napomena za kraj dana…"></textarea>
+  <label class="chk" style="margin:-4px 0 14px"><input type="checkbox" id="pdfWithNotes"> Uvrsti i sve napomene o doktorima</label>
+  <div class="acts"><button class="btn ghost" id="pdfCancel" type="button">Otkaži</button><button class="btn" id="pdfGo" type="button" title="Prečica: Ctrl+Enter">Izvezi PDF</button></div>
+</dialog>
+<dialog id="dlgAsk"><h4 id="aTitle"></h4><p id="aText" style="white-space:pre-line"></p><div class="acts"><button class="btn ghost" id="aNo" type="button">Otkaži</button><button class="btn" id="aYes" type="button">Nastavi</button></div></dialog>
+<div id="tip" role="tooltip"></div>
+<div id="toast" role="status"></div>
+
+<script>
+const KEY='ordination-planner-v1';
+const uid=()=>Math.random().toString(36).slice(2,9);
+const ROSTER={
+'Opšta praksa':[],
+'Hirurg':['Aleksandar Andrić','Milan Korica','Zoran Đermanov','Ivan Majdevac','Mladen Đurić','Aleksandar Baigerov','Miroslav Ilić','Radomir Ilić','Uroš Milošević'],
+'Ortoped':['Dragan Savić','Vladimir Harhaji','Vaso Kecojević','Vladimir Đan','Oliver Dulić','Mile Bjelobrk','Mirko Obradović','Omar Fata Nahas','Milan Tošić'],
+'Neurohirurg':['Petar Vuleković','Đula Đilvesi'],
+'Neurolog':['Danijela Andrić'],
+'Vaskularni hirurg':['Slavko Budinski','Dragan Nikolić','Ivan Marjanović'],
+'Estetska hirurgija':['Miloš Kovačević','Ana Paroški'],
+'Grudna hirurgija':['Ivan Kuhajda'],
+'Dečji hirurg':['Slobodan Grebeldinger','Radoica Jokić','Nenad Žakula'],
+'Ginekolog':['Goran Malenković','Luka Anđelić','Aleksandar Babić','Klara Birinji Milosavljević','Bojana Gutić','Jelena Meandžija'],
+'Urolog':['Paunel Popov','Borislav Njegovan','Stefan Veselinović','Jovan Radojević'],
+'Anesteziolog':['Jovan Stričević','Zoran Dragić'],
+'Pedijatar':['Snežana Blažić','Ljiljana Ristovski','Tatiana Baigerov','Nataša Kaćanski','Ana Vasilevski Lazarević','Draženka Todorović Medić','Biljana Petrović','Mikloš Njiradi'],
+'Endokrinolog':['Blaženko Vuković'],
+'Kardiolog':['Dušan Živković','Miodrag Golubović'],
+'Nuklearna medicina':['Jasna Mihailović'],
+'Radiolog':['Kristina Koprivica','Sanja Stojanović','Branislava Bogdanović','Jadranka Dragaš','Marija Grdinić','Aleksandar Mladenović'],
+'Dermatolog':['Mirjana Elhag'],
+'Gastroenterolog':['Stevan Trbojević','Dušan Grujić'],
+'Interna medicina':['Kristina Jovanović','Tatjana Roganović'],
+'Pulmolog':['Stevan Somborac','Svetlana Jovanović'],
+'ORL':['Zoran Dukić','Lili Džilvidžieva','Jasna Jovićević','Ivan Sivčev','Vanja Tovilović','Milica Prtina'],
+'Fizijatar':['Radmila Vlajić','Stevan Dragosavljević'],
+};
+const SPEC_ORDER=Object.keys(ROSTER);
+const SERVICES={'Hirurg':['MHI'],'Vaskularni hirurg':['MHI'],'Kardiolog':['Test opterećenja'],'Urolog':['Uroflow','Urodinamika','MHI','TRUZ biopsija','Bužiranje','Cistoskopija','Frenulotomija'],'Dermatolog':['Krioterapija','Elektrokauterizacija'],'Opšta praksa':['Infuzija','Previjanje','Aplikovanje injekcije','Adacel','Gardasil','Tetagam','Tetavaxal'],'Anesteziolog':['Nervna blokada'],'ORL':['Alergijski test']};
+const ORDS=Array.from({length:8},(_,i)=>'Ordinacija '+(i+1));
+const WORK_FROM='07:00',WORK_TO='21:00';
+const BEDS=4;
+const NOTE_MAX=500;   /* najviše znakova u napomeni uz termin */
+const noTime=t=>t==='00:00';                 /* holteri/skopije: 00:00 znači da vreme nije određeno */
+const showT=t=>noTime(t)?'Bez vremena':t;
+const tkey=t=>noTime(t)?'24:00':t;            /* bez vremena ide na kraj spiska */   /* broj kreveta je uvek 4 */
+let S;   /* stanje programa, učitava se na kraju skripte (loadStored) */
+const GP_ID='opsta-praksa',GP_SPEC='Opšta praksa';   /* „Opšta praksa“ je zamenski lekar (joker): u terminu mu se dodeli pravi lekar */
+const GP_NAMES=['Dr Tamara Gavrić','Dr Branko Dakić','Dr Jelena Repić','Dr Milica Trikić','Dr Tara Šljukić','Dr Ana Šimunđa Vuković','Dr Ljiljana Veličković','Dr Zorana Ilić','Dr Tamara Krstić','Dr Teodora Jokić'];
+const nameKey=n=>n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/đ/g,'dj').replace(/^dr\.?\s+/,'').replace(/\s+/g,' ').trim().replace(/[.,;]+$/,'');   /* isti lekar: bez obzira na velika slova, kvačice i „Dr“ */
+const rosterDocs=()=>[...Object.entries(ROSTER).flatMap(([spec,names])=>names.map(n=>({id:uid(),name:'Dr '+n,spec}))),{id:GP_ID,name:'Opšta praksa',spec:GP_SPEC}];
+/* specijalizacije i usluge žive u programu (ROSTER/SERVICES gore), ne u sačuvanim podacima: dopuna se uvek odmah vidi */
+const SPECS=SPEC_ORDER.map(name=>({name,services:SERVICES[name]||[]}));
+const NO_STORAGE='Pregledač ne čuva podatke u ovom prozoru. Pre zatvaranja obavezno kliknite „Sačuvaj“ i sačuvajte datoteku, a sledeći put je učitajte dugmetom „Učitaj“.';
+let storageOk=true;
+function showNotice(kind,text,btnLabel,onBtn){
+  const n=$('notice'),b=$('noticeBtn');n.dataset.kind=kind;$('noticeText').textContent=text;
+  b.hidden=!btnLabel;if(btnLabel){b.textContent=btnLabel;b.onclick=onBtn}n.hidden=false;
+}
+const save=()=>{
+  try{localStorage.setItem(KEY,JSON.stringify(S));if(!storageOk){storageOk=true;if($('notice').dataset.kind==='storage')$('notice').hidden=true}}
+  catch(e){if(storageOk){storageOk=false;showNotice('storage',NO_STORAGE)}}
+};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const doc=id=>S.docs.find(d=>d.id===id);
+let dragging=null,pend=null;
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2800)}
+
+function render(){
+  $('tip').classList.remove('on');
+  $('qClear').hidden=!$('q').value;
+  const q=$('q').value.trim().toLowerCase();
+  const list=S.docs.filter(d=>(d.name+' '+d.spec).toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  const card=d=>{
+    if(d.id===GP_ID)return `<li class="doc joker" draggable="true" data-doc="${d.id}"><div class="t"><b>${esc(d.name)}</b><small>Lekar se dodeljuje u terminu</small></div></li>`;
+    return `<li class="doc" draggable="true" data-doc="${d.id}"><div class="t"><b>${esc(d.name)}</b></div><button class="x" data-deldoc="${d.id}" title="Obriši lekara" aria-label="Obriši ${esc(d.name)}">×</button></li>`};
+  const groups=new Map(),order=SPECS.map(x=>x.name);
+  list.forEach(d=>{const k=d.spec;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(d)});
+  const keys=[...groups.keys()].sort((a,b)=>{
+    const ia=order.indexOf(a),ib=order.indexOf(b);
+    return ia>=0&&ib>=0?ia-ib:ia>=0?-1:ib>=0?1:a.localeCompare(b)});
+  $('docs').innerHTML=list.length?keys.map(k=>`<li class="grp"><span>${esc(k)}</span><em>${groups.get(k).length}</em></li>`+groups.get(k).map(card).join('')).join('')
+    :`<li class="empty">${S.docs.length?'Nema lekara koji odgovaraju pretrazi.':'Još nema lekara. Dodajte ih iznad.'}</li>`;
+  $('grid').innerHTML=ORDS.map((name,i)=>{
+    const sl=S.shifts.filter(s=>s.ord===i).sort((a,b)=>a.start.localeCompare(b.start));
+    return `<section class="ord" data-ord="${i}"><h3><span>${esc(name)}</span><em>${sl.length}</em></h3><div class="slots">${
+      sl.length?sl.map(s=>{const d=doc(s.doc);
+        if(s.done)return `<div class="slot done compact" draggable="true" data-shift="${s.id}"><span class="ctm">${s.start}–${s.end}</span><span class="cnm" title="${esc(slotName(s))}">${esc(slotName(s).replace(/^Dr /,''))}</span>${s.late?`<span class="clt" title="Kašnjenje ${s.late} min">+${s.late}′</span>`:''}<button class="x cundo" data-fin="${s.id}" title="Vrati u nezavršeno" aria-label="Vrati u nezavršeno"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button></div>`;
+        const cl=clashesOf(s);const sv=(s.svcs||[]).slice().sort((a,b)=>a.time.localeCompare(b.time));
+      const bd=(s.late?`<button class="badge" data-late="${s.id}" title="Izmeni kašnjenje">Kasni ${s.late} min</button>`:'')+(sv.length?`<button class="badge svb" data-svcs="${s.id}" data-tip="${esc(sv.map(v=>v.name+' — '+v.time).join('\n'))}" aria-label="Usluge u terminu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg>${sv.length} ${plSvc(sv.length)}</button>`:'')+(s.note?`<button class="badge nb" data-note="${s.id}" data-tip="${esc(s.note)}" aria-label="Napomena"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Napomena</button>`:'')+(cl.length?`<span class="badge cl" data-tip="${esc('Preklapa se sa:\n'+cl.map(x=>slotName(x)+' '+x.start+'–'+x.end).join('\n'))}">Preklapanje</span>`:'');
+      return `<div class="slot${s.late?' late':''}${s.done?' done':''}${cl.length?' clash':''}" draggable="true" data-shift="${s.id}"><button class="tm" data-edit="${s.id}" title="Promeni vreme">${s.start}–${s.end}</button><div class="acts2"><button class="x lt" data-svcs="${s.id}" title="Dodaj uslugu" aria-label="Dodaj uslugu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></button><button class="x lt nbtn" data-note="${s.id}" title="${s.note?'Izmeni napomenu':'Dodaj napomenu'}" aria-label="Napomena"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></button><button class="x lt" data-late="${s.id}" title="Dodaj kašnjenje" aria-label="Dodaj kašnjenje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button><button class="x lt${s.done?' on':''}" data-fin="${s.id}" title="${s.done?'Vrati u nezavršeno':'Završi termin'}" aria-label="${s.done?'Vrati u nezavršeno':'Završi termin'}" aria-pressed="${s.done?'true':'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/></svg></button><button class="x" data-delshift="${s.id}" title="Ukloni iz ordinacije" aria-label="Ukloni">×</button></div><div class="nm"><b>${esc(d.name)}</b>${d.id===GP_ID?`<small class="gpn${s.gp?' set':''}">${s.gp?esc(s.gp):'Lekar nije dodeljen'}</small>`:`<small>${esc(d.spec||'')}</small>`}${bd?`<div class="bdgs">${bd}</div>`:''}</div></div>`}).join('')
+      :'<div class="hint">Prevucite lekara ovde</div>'}</div></section>`}).join('');
+  const hs=[...S.holters].sort((a,b)=>tkey(a.time).localeCompare(tkey(b.time))||a.name.localeCompare(b.name));
+  $('holCount').textContent=hs.length;
+  $('holList').innerHTML=hs.length?hs.map(h=>`<div class="hrow${h.done?' done':''}"><input type="checkbox" class="dn" data-holdone="${h.id}"${h.done?' checked':''} aria-label="Holter je odrađen" title="Odrađeno"><button class="tm${noTime(h.time)?' nt':''}" data-holedit="${h.id}" title="Izmeni">${showT(h.time)}</button><div class="hn"><button class="pn" data-holedit="${h.id}" title="Izmeni">${esc(h.name)}</button>${h.cardio?`<small>Kardiolog: ${esc(h.cardio)}</small>`:''}</div><div class="tags">${h.ekg?'<span class="tg">EKG</span>':''}${h.ta?'<span class="tg">TA</span>':''}<span class="tg ${h.action}">${h.action==='stavlja'?'Stavlja':'Skida'}</span></div><button class="x" data-holdel="${h.id}" title="Ukloni pacijenta" aria-label="Ukloni pacijenta">×</button></div>`).join(''):'<div class="hint">Još nema pacijenata za holtere.</div>';
+  renderScopes();
+}
+
+function overlap(a,b){return a.start<b.end&&b.start<a.end}
+const personOf=s=>s.doc===GP_ID?(s.gp?'gp:'+s.gp:''):s.doc;   /* ko je stvarno u terminu; '' = lekar opšte prakse još nije dodeljen */
+const slotName=s=>{const d=doc(s.doc);return d.id===GP_ID?(s.gp?'Opšta praksa: '+s.gp:'Opšta praksa'):d.name};
+function findClash(c){   /* same doctor at overlapping time = hard block; other doctors in the same ordination = allowed (red) */
+  let docClash=null;const ordClash=[];
+  for(const s of S.shifts){
+    if(s.id===c.id||!overlap(s,c))continue;
+    if(personOf(c)&&personOf(s)===personOf(c)){docClash=docClash||s}else if(s.ord===c.ord)ordClash.push(s);
+  }
+  return {docClash,ordClash};
+}
+const clashesOf=s=>S.shifts.filter(x=>x.id!==s.id&&x.ord===s.ord&&overlap(x,s));
+function check(c){
+  if(!c.start||!c.end)return 'Izaberite početak i kraj termina.';
+  if(c.start>=c.end)return 'Kraj mora biti posle početka.';
+  const {docClash}=findClash(c);
+  if(docClash)return `${slotName(c)} je već raspoređen/a: ${ORDS[docClash.ord]}, ${docClash.start}–${docClash.end}.`;
+  return '';
+}
+function askSwap(s,ord,clash){
+  return new Promise(res=>{
+    const d=$('dlgSwap'),one=clash.length===1;
+    $('swText').textContent=`U „${ORDS[ord]}“ je u tom terminu već ${clash.map(x=>slotName(x)+' ('+x.start+'–'+x.end+')').join(', ')}.`;
+    $('swSwap').hidden=!one;
+    const done=v=>{d.onclose=null;d.close();res(v)};
+    $('swSwap').onclick=()=>done('swap');$('swAdd').onclick=()=>done('add');$('swNo').onclick=()=>done(null);d.onclose=()=>res(null);
+    d.showModal();(one?$('swSwap'):$('swAdd')).focus();
+  });
+}
+
+function openDlg(p){
+  pend=p;
+  const d=doc(p.doc);
+  $('dTitle').textContent=p.id?'Izmena satnice':'Dodela: '+ORDS[p.ord];
+  $('dSub').textContent=slotName(p)+(p.id?' · '+ORDS[p.ord]:'');
+  $('gpWrap').hidden=d.id!==GP_ID;
+  if(d.id===GP_ID){
+    $('gpSel').innerHTML='<option value="">Nije dodeljen</option>'+GP_NAMES.map(n=>`<option>${esc(n)}</option>`).join('')+(p.gp&&!GP_NAMES.includes(p.gp)?`<option>${esc(p.gp)}</option>`:'');
+    $('gpSel').value=p.gp||'';
+  }
+  $('tStart').value=p.start||'';$('tEnd').value=p.end||'';resetTin();
+  $('dErr').textContent='';
+  $('dlg').showModal();$('tStart').focus();$('tStart').select();
+}
+$('dOk').onclick=async()=>{
+  const st=parseTime($('tStart').value),en=parseTime($('tEnd').value);
+  if(!st||!en){$('dErr').textContent='Upišite vreme u 24h formatu, npr. 08:30.';return}
+  const c={...pend,start:st,end:en,gp:pend.doc===GP_ID?$('gpSel').value:''};
+  const e=check(c);
+  if(e){$('dErr').textContent=e;return}
+  if(c.id){   /* usluge moraju ostati unutar termina */
+    const out=(S.shifts.find(x=>x.id===c.id).svcs||[]).filter(v=>v.time<st||v.time>en);
+    if(out.length){$('dErr').textContent=`Usluge ${out.map(v=>v.name+' '+v.time).join(', ')} bi bile van novog termina. Prvo ih uklonite ili izaberite šire vreme.`;return}
+  }
+  if(!await okHours(st,en))return;
+  const {ordClash}=findClash(c);
+  if(ordClash.length){
+    const ok=await askConfirm('Termin je zauzet',`U „${ORDS[c.ord]}“ je u tom terminu već ${ordClash.map(x=>slotName(x)+' ('+x.start+'–'+x.end+')').join(', ')}.\nDodati ipak?`,'Dodaj ipak');
+    if(!ok)return;
+  }
+  if(c.id){const t=S.shifts.find(s=>s.id===c.id);Object.assign(t,{start:c.start,end:c.end});if(c.gp)t.gp=c.gp;else delete t.gp}
+  else S.shifts.push({id:uid(),doc:c.doc,ord:c.ord,start:c.start,end:c.end,...(c.gp?{gp:c.gp}:{})});
+  $('dlg').close();save();render();
+};
+$('dCancel').onclick=()=>$('dlg').close();
+
+function setAddOpen(open){
+  $('addForm').hidden=!open;$('toggleAdd').textContent=open?'Zatvori':'+ Novi lekar';
+  $('toggleAdd').setAttribute('aria-expanded',String(open));if(open)$('newName').focus();
+}
+function clearAddErr(){$('addErr').textContent='';$('newName').classList.remove('bad');$('newSpec').classList.remove('bad')}
+$('addForm').onsubmit=e=>{
+  e.preventDefault();
+  const name=$('newName').value.trim(),spec=$('newSpec').value;
+  if(!name||!spec){
+    $('addErr').textContent=!name?'Upišite ime i prezime lekara.':'Izaberite specijalizaciju. Lekar ne može biti bez nje.';
+    $('newName').classList.toggle('bad',!name);$('newSpec').classList.toggle('bad',!!name&&!spec);
+    (name?$('newSpec'):$('newName')).focus();return;
+  }
+  if(S.docs.some(d=>nameKey(d.name)===nameKey(name))){
+    $('addErr').textContent='Lekar sa tim imenom već postoji u listi.';$('newName').classList.add('bad');$('newName').focus();return;
+  }
+  clearAddErr();
+  S.docs.push({id:uid(),name,spec});
+  $('newName').value='';$('newSpec').value='';$('q').value='';
+  save();render();$('newName').focus();
+};
+$('newName').addEventListener('input',clearAddErr);$('newSpec').addEventListener('change',clearAddErr);
+$('addForm').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='SELECT'){e.preventDefault();$('addForm').requestSubmit()}});
+$('toggleAdd').onclick=()=>setAddOpen($('addForm').hidden);
+document.addEventListener('click',e=>{if(!$('addForm').hidden&&e.target.closest&&!e.target.closest('#addForm,#toggleAdd'))setAddOpen(false)});
+$('q').oninput=render;
+$('qClear').onclick=()=>{$('q').value='';render();$('q').focus()};
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.deldoc){
+    const d=doc(t.dataset.deldoc);
+    askConfirm('Brisanje lekara',`Obrisati: ${d.name}? Biće uklonjen/a i iz svih ordinacija.`,'Obriši').then(ok=>{
+      if(ok){S.docs=S.docs.filter(x=>x.id!==d.id);S.shifts=S.shifts.filter(v=>v.doc!==d.id);save();render()}
+    });
+  }else if(t.dataset.delshift){S.shifts=S.shifts.filter(s=>s.id!==t.dataset.delshift);save();render()}
+  else if(t.dataset.edit){const s=S.shifts.find(x=>x.id===t.dataset.edit);openDlg({...s})}
+  else if(t.dataset.late){openLate(t.dataset.late)}
+  else if(t.dataset.fin){const x=S.shifts.find(v=>v.id===t.dataset.fin);if(x){if(x.done)delete x.done;else x.done=true;save();render()}}
+  else if(t.dataset.svcs){openSlotSvc(t.dataset.svcs)}
+  else if(t.dataset.note){openNote(t.dataset.note)}
+  else if(t.dataset.holedit){openHol(t.dataset.holedit)}
+  else if(t.dataset.holdel){const h=S.holters.find(x=>x.id===t.dataset.holdel);if(h)askConfirm('Brisanje pacijenta',`Obrisati pacijenta ${h.name} iz holtera?`,'Obriši').then(ok=>{if(ok){S.holters=S.holters.filter(x=>x.id!==h.id);save();render()}})}
+  else if(t.dataset.skedit){openSk(t.dataset.skedit)}
+  else if(t.dataset.skdel){const k=S.scopes.find(x=>x.id===t.dataset.skdel);if(k)askConfirm('Brisanje pacijenta',`Obrisati pacijenta ${k.name} iz skopija?`,'Obriši').then(ok=>{if(ok){S.scopes=S.scopes.filter(x=>x.id!==k.id);save();render()}})}
+});
+
+
+document.addEventListener('dragstart',e=>{
+  const el=e.target.closest&&e.target.closest('[data-doc],[data-shift]');if(!el)return;
+  dragging=el.dataset.doc?{type:'doc',id:el.dataset.doc}:{type:'shift',id:el.dataset.shift};
+  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragging.id);
+});
+document.addEventListener('dragend',()=>{dragging=null;document.querySelectorAll('.over').forEach(x=>x.classList.remove('over'))});
+document.addEventListener('dragover',e=>{
+  const o=e.target.closest&&e.target.closest('.ord');
+  document.querySelectorAll('.over').forEach(x=>x!==o&&x.classList.remove('over'));
+  if(o&&dragging){e.preventDefault();o.classList.add('over')}
+});
+document.addEventListener('drop',e=>{
+  const o=e.target.closest&&e.target.closest('.ord');if(!o||!dragging)return;
+  e.preventDefault();o.classList.remove('over');
+  const ord=+o.dataset.ord,drag=dragging;dragging=null;
+  if(drag.type==='doc'){openDlg({doc:drag.id,ord});return}
+  const s=S.shifts.find(x=>x.id===drag.id);if(!s||s.ord===ord)return;
+  const c={...s,ord},err=check(c);
+  if(err){toast(err);return}
+  const {ordClash}=findClash(c);
+  if(!ordClash.length){s.ord=ord;save();render();return}
+  askSwap(s,ord,ordClash).then(r=>{
+    if(!r)return;
+    if(r==='swap'){const o2=S.shifts.find(x=>x.id===ordClash[0].id),from=s.ord;s.ord=ord;o2.ord=from}else s.ord=ord;
+    save();render();
+    if(S.shifts.some(x=>clashesOf(x).length))toast('Preklapajući termini su označeni crveno.');
+  });
+});
+/* ---- typed 24h time fields with instant validation ---- */
+const pad2=n=>String(n).padStart(2,'0');
+function parseTime(v){
+  v=String(v).trim();
+  const ok=(h,m)=>h>23||m>59?null:pad2(h)+':'+pad2(m);
+  let m=/^(\d{1,2}):?$/.exec(v);if(m)return ok(+m[1],0);            // 9, 09, 09:  ->  09:00
+  m=/^(\d{1,2}):?(\d{2})$/.exec(v);if(m)return ok(+m[1],+m[2]);     // 930, 9:30, 09:30
+  m=/^(\d{1,2}):([0-5])$/.exec(v);if(m)return ok(+m[1],+m[2]*10);   // 9:3 -> 09:30
+  return null;
+}
+function fmtTime(raw,ins){
+  let v=raw.replace(/[^\d:]/g,'');
+  const c=v.indexOf(':');if(c>=0)v=v.slice(0,c+1)+v.slice(c+1).replace(/:/g,'');
+  if(v.indexOf(':')<0){
+    if(v.length===1&&ins&&+v>=3)v='0'+v+':';        // 9 -> 09:
+    else if(v.length===2&&ins)v=v+':';              // 08 -> 08:
+    else if(v.length>2)v=v.slice(0,2)+':'+v.slice(2);
+  }else if(v.indexOf(':')===1)v='0'+v;              // 8: -> 08:
+  return v.slice(0,5);
+}
+function timeProblem(v,final){
+  if(!v)return '';
+  const m=/^(\d{1,2})(?::(\d{0,2}))?$/.exec(v);
+  if(!m)return 'Nevalidno vreme. Primer: 08:30.';
+  const h=m[1],mi=m[2];
+  if(h.length===2&&+h>23)return 'Nevalidno vreme: sati moraju biti od 00 do 23.';
+  if(mi&&+mi[0]>5)return 'Nevalidno vreme: minuti moraju biti od 00 do 59.';
+  return '';
+}
+function showTimeErr(t,msg){
+  let e=t.parentNode.querySelector('.terr');
+  if(msg){if(!e){e=document.createElement('small');e.className='terr';e.setAttribute('role','alert');t.insertAdjacentElement('afterend',e)}e.textContent=msg}
+  else if(e)e.remove();
+  t.classList.toggle('bad',!!msg);t.setAttribute('aria-invalid',msg?'true':'false');
+}
+const resetTin=()=>document.querySelectorAll('.tin').forEach(t=>showTimeErr(t,''));
+const isTin=t=>t&&t.classList&&t.classList.contains('tin');
+document.addEventListener('input',e=>{const t=e.target;if(!isTin(t))return;t.value=fmtTime(t.value,!(e.inputType||'').startsWith('delete'));showTimeErr(t,timeProblem(t.value,false))});
+document.addEventListener('focusout',e=>{
+  const t=e.target;if(!isTin(t))return;
+  const p=parseTime(t.value);
+  if(p){t.value=p;showTimeErr(t,'')}
+  else showTimeErr(t,t.value.trim()?(timeProblem(t.value,true)||'Nevalidno vreme. Primer: 08:30.'):'');
+});
+
+/* ---- usluge po specijalizaciji ---- */
+const svcOf=d=>(SPECS.find(x=>x.name===d.spec)||{services:[]}).services;
+function fillSpecSelect(){const sel=$('newSpec'),v=sel.value;sel.innerHTML='<option value="">Specijalizacija (obavezno)</option>'+SPECS.filter(x=>x.name!==GP_SPEC).map(x=>`<option>${esc(x.name)}</option>`).join('');sel.value=v}
+/* ---- današnji dan i datum; ID dana (DDMMGGGG) se koristi za ime izvezenih datoteka ---- */
+const DAYS=['nedelja','ponedeljak','utorak','sreda','četvrtak','petak','subota'];
+function todayText(){const d=new Date(),w=DAYS[d.getDay()];return w[0].toUpperCase()+w.slice(1)+', '+d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear()+'.'}
+function dayId(){const d=new Date(),p=n=>String(n).padStart(2,'0');return p(d.getDate())+p(d.getMonth()+1)+d.getFullYear()}
+function showToday(){$('today').textContent=todayText()}
+setInterval(showToday,60000);
+
+
+/* ---- napomena uz termin lekara ---- */
+let ntId=null;
+const ntShift=()=>S.shifts.find(x=>x.id===ntId);
+function openNote(id){
+  ntId=id;const s=ntShift();if(!s)return;
+  $('ntSub').textContent=slotName(s)+' · '+ORDS[s.ord]+' · '+s.start+'–'+s.end;
+  $('ntText').value=s.note||'';ntCount();$('ntDel').hidden=!s.note;$('dlgNote').showModal();$('ntText').focus();
+}
+function ntCount(){
+  const n=$('ntText').value.length,c=$('ntCount');
+  c.textContent=n+'/'+NOTE_MAX;c.classList.toggle('warn',n>=NOTE_MAX*0.9&&n<NOTE_MAX);c.classList.toggle('full',n>=NOTE_MAX);
+}
+$('ntText').maxLength=NOTE_MAX;
+$('ntText').addEventListener('input',ntCount);
+$('ntCancel').onclick=()=>$('dlgNote').close();
+$('ntOk').onclick=()=>{const s=ntShift();if(s){const t=$('ntText').value.trim();if(t)s.note=t;else delete s.note;save();render()}$('dlgNote').close()};
+$('ntDel').onclick=()=>{const s=ntShift();if(s){delete s.note;save();render()}$('dlgNote').close()};
+$('ntText').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();$('ntOk').click()}});
+
+/* ---- usluge u terminu + tooltip ---- */
+const plSvc=n=>(n%10>=2&&n%10<=4&&!(n%100>=12&&n%100<=14))?'usluge':'usluga';
+const tip=$('tip');
+function showTip(el){tip.textContent=el.dataset.tip;tip.classList.add('on');const r=el.getBoundingClientRect(),t=tip.getBoundingClientRect();let x=r.left,y=r.bottom+8;if(x+t.width>innerWidth-8)x=innerWidth-t.width-8;if(y+t.height>innerHeight-8)y=r.top-t.height-8;tip.style.left=Math.max(8,x)+'px';tip.style.top=Math.max(8,y)+'px'}
+const tipEl=e=>e.target.closest?e.target.closest('[data-tip]'):null;
+document.addEventListener('mouseover',e=>{const el=tipEl(e);if(el)showTip(el)});
+document.addEventListener('mouseout',e=>{const el=tipEl(e);if(el&&!el.contains(e.relatedTarget))tip.classList.remove('on')});
+document.addEventListener('focusin',e=>{const el=tipEl(e);if(el)showTip(el)});
+document.addEventListener('focusout',e=>{if(tipEl(e))tip.classList.remove('on')});
+let ssId=null;
+const ssShift=()=>S.shifts.find(x=>x.id===ssId);
+function renderSlotSvc(){
+  const s=ssShift();if(!s)return;
+  const d=doc(s.doc),all=svcOf(d),sv=(s.svcs||[]).slice().sort((a,b)=>a.time.localeCompare(b.time));
+  $('ssSub').textContent=slotName(s)+(d.spec?' · '+d.spec:'')+' · '+ORDS[s.ord]+' · '+s.start+'–'+s.end;
+  $('ssList').innerHTML=sv.length?sv.map(v=>`<div class="ssrow"><b>${v.time}</b><span>${esc(v.name)}</span><button type="button" class="x" data-ssdel="${v.id}" aria-label="Ukloni uslugu ${esc(v.name)}">×</button></div>`).join(''):'<div class="hint" style="padding:10px">Još nema dodatih usluga.</div>';
+  $('ssPicks').innerHTML=all.length?all.map((n,i)=>`<label class="pick"><input type="radio" name="ssel" value="${i}"><span>${esc(n)}</span></label>`).join(''):'<em>'+(d.spec?'Za specijalizaciju „'+esc(d.spec)+'“ još nema usluga. Dodajte ih preko zupčanika kod naslova „Lekari“.':'Ovaj lekar nema izabranu specijalizaciju, pa nema ni usluga.')+'</em>';
+  $('ssOk').disabled=!all.length;$('ssTime').disabled=!all.length;
+}
+function openSlotSvc(id){ssId=id;const s=ssShift();if(!s)return;$('ssTime').value='';$('ssErr').textContent='';resetTin();renderSlotSvc();$('dlgSlotSvc').showModal();$('ssTime').focus()}
+$('ssOk').onclick=async()=>{
+  const s=ssShift(),all=svcOf(doc(s.doc)),pick=document.querySelector('input[name=ssel]:checked'),time=parseTime($('ssTime').value);
+  const e=!pick?'Izaberite uslugu.':!time?'Upišite vreme u 24h formatu, npr. 08:30.':(time<s.start||time>s.end)?`Usluga mora biti u terminu lekara (${s.start}–${s.end}).`:'';
+  if(e){$('ssErr').textContent=e;return}
+  if(!await okHours(time))return;
+  (s.svcs=s.svcs||[]).push({id:uid(),name:all[+pick.value],time});
+  $('ssErr').textContent='';$('ssTime').value='';resetTin();save();render();renderSlotSvc();
+};
+$('ssList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ssdel]');if(!b)return;const s=ssShift();if(!s)return;
+  s.svcs=(s.svcs||[]).filter(v=>v.id!==b.dataset.ssdel);if(!s.svcs.length)delete s.svcs;
+  save();render();renderSlotSvc();
+});
+$('ssClose').onclick=()=>$('dlgSlotSvc').close();
+
+/* ---- donji panel (holteri + skopije): sklopljen dok ga ne otvorite ---- */
+function setDock(open,persist){$('dockBody').hidden=!open;$('dockBar').setAttribute('aria-expanded',String(open));$('dock').classList.toggle('open',open);S.dockOpen=open;if(persist)save()}
+$('dockBar').onclick=()=>setDock($('dockBody').hidden,true);
+
+/* ---- skopije + broj slobodnih kreveta ---- */
+let skId=null;
+const bedsFree=()=>BEDS-S.scopes.filter(x=>x.up&&!x.down).length;
+const scopeLabel=x=>{const a=[];if(x.colo)a.push('Kolonoskopija');if(x.gastro)a.push('Gastroskopija');return a.join(' + ')};
+function renderScopes(){
+  const sc=[...S.scopes].sort((a,b)=>tkey(a.time).localeCompare(tkey(b.time))||a.name.localeCompare(b.name));
+  $('skCount').textContent=sc.length;
+  $('skList').innerHTML=sc.length?sc.map(x=>`<div class="srow${x.up&&!x.down?' in':''}${x.down?' out':''}"><button class="tm${noTime(x.time)?' nt':''}" data-skedit="${x.id}" title="Izmeni">${showT(x.time)}</button><div class="sn"><button class="pn" data-skedit="${x.id}" title="Izmeni">${esc(x.name)}</button><small>${esc(scopeLabel(x))}${x.anes?' · <span class="an">Anestezija</span>':''}</small></div><div class="cks"><label class="ck"><input type="checkbox" data-skup="${x.id}"${x.up?' checked':''}> Podignuta</label><label class="ck"><input type="checkbox" data-skdown="${x.id}"${x.down?' checked':''}> Spuštena</label></div><button class="x" data-skdel="${x.id}" title="Ukloni" aria-label="Ukloni">×</button></div>`).join(''):'<div class="hint">Još nema upisanih skopija.</div>';
+  const free=bedsFree();
+  $('dsHol').textContent=S.holters.length;$('dsSk').textContent=S.scopes.filter(x=>x.down).length+' od '+S.scopes.length;$('dsBed').textContent=free;$('dsWarn').textContent=free<0?'Pacijent nije spušten':'';$('dock').classList.toggle('neg',free<0);
+  $('bedFree').textContent=free;$('beds').classList.toggle('neg',free<0);$('bedWarn').textContent=free<0?'Pacijent nije spušten':'';
+}
+document.addEventListener('change',e=>{
+  const t=e.target;if(!t.dataset)return;
+  const id=t.dataset.skup||t.dataset.skdown,x=id&&S.scopes.find(v=>v.id===id);if(!x)return;
+  if(t.dataset.skup){x.up=t.checked;if(!t.checked)x.down=false}else{x.down=t.checked;if(t.checked)x.up=true}
+  save();render();
+});
+function openSk(id){
+  const x=id?S.scopes.find(v=>v.id===id):null;skId=x?x.id:null;
+  $('skTitle').textContent=x?'Izmena pacijenta':'Dodaj pacijenta';
+  $('skName').value=x?x.name:'';$('skColo').checked=!!(x&&x.colo);$('skGastro').checked=!!(x&&x.gastro);$('skAnes').checked=!!(x&&x.anes);$('skTime').value=x?x.time:'';$('skErr').textContent='';resetTin();
+  $('dlgSk').showModal();$('skName').focus();
+}
+$('addSk').onclick=()=>openSk(null);
+$('skCancel').onclick=()=>$('dlgSk').close();
+$('skOk').onclick=async()=>{
+  const name=$('skName').value.trim(),colo=$('skColo').checked,gastro=$('skGastro').checked,anes=$('skAnes').checked,time=parseTime($('skTime').value);
+  const e=!name?'Upišite ime pacijenta.':!(colo||gastro)?'Izaberite kolonoskopiju, gastroskopiju ili oba.':!time?'Upišite satnicu u 24h formatu, npr. 08:30.':'';
+  if(e){$('skErr').textContent=e;return}
+  if(!noTime(time)&&!await okHours(time))return;
+  if(skId){const x=S.scopes.find(v=>v.id===skId);Object.assign(x,{name,colo,gastro,anes,time})}
+  else S.scopes.push({id:uid(),name,colo,gastro,anes,time,up:false,down:false});
+  $('dlgSk').close();save();render();
+};
+
+/* ---- holteri ---- */
+let holId=null;
+function fillCardio(cur){   /* samo kardiolozi iz liste lekara (ako je lekar obrisan, sačuvano ime ostaje ponuđeno) */
+  const names=S.docs.filter(d=>d.spec==='Kardiolog').map(d=>d.name).sort((a,b)=>a.localeCompare(b));
+  if(cur&&!names.includes(cur))names.push(cur);
+  $('hDoc').innerHTML='<option value="">Izaberite kardiologa</option>'+names.map(n=>`<option>${esc(n)}</option>`).join('');
+  $('hDoc').value=cur||'';
+}
+function openHol(id){
+  const h=id?S.holters.find(x=>x.id===id):null;holId=h?h.id:null;
+  $('hTitle').textContent=h?'Izmena pacijenta':'Dodaj pacijenta';
+  $('hName').value=h?h.name:'';fillCardio(h?h.cardio:'');$('hEkg').checked=!!(h&&h.ekg);$('hTa').checked=!!(h&&h.ta);
+  document.querySelector('input[name=hAct][value='+(h?h.action:'stavlja')+']').checked=true;
+  $('hTime').value=h?h.time:'';$('hErr').textContent='';resetTin();$('dlgHol').showModal();$('hName').focus();
+}
+$('addHol').onclick=()=>openHol(null);
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.holdone){const h=S.holters.find(x=>x.id===t.dataset.holdone);if(h){h.done=t.checked;save();render()}}});
+$('hCancel').onclick=()=>$('dlgHol').close();
+$('hOk').onclick=async()=>{
+  const name=$('hName').value.trim(),cardio=$('hDoc').value,time=parseTime($('hTime').value),ekg=$('hEkg').checked,ta=$('hTa').checked,action=document.querySelector('input[name=hAct]:checked').value;
+  const e=!name?'Upišite ime pacijenta.':!cardio?'Izaberite kardiologa kod kog se stavlja holter.':(!ekg&&!ta)?'Izaberite EKG, TA ili oba holtera.':!time?'Upišite satnicu u 24h formatu, npr. 08:30.':'';
+  if(e){$('hErr').textContent=e;return}
+  if(!noTime(time)&&!await okHours(time))return;
+  if(holId)Object.assign(S.holters.find(x=>x.id===holId),{name,cardio,ekg,ta,action,time});else S.holters.push({id:uid(),name,cardio,ekg,ta,action,time});
+  $('dlgHol').close();save();render();
+};
+
+/* ---- lateness ---- */
+let lateId=null;
+function openLate(id){const s=S.shifts.find(x=>x.id===id);if(!s)return;lateId=id;$('lSub').textContent=slotName(s)+' · '+ORDS[s.ord]+' · '+s.start+'–'+s.end;$('lMin').value=s.late||'';$('dlgLate').showModal();$('lMin').focus()}
+$('lOk').onclick=()=>{const v=Math.max(0,Math.min(600,parseInt($('lMin').value,10)||0));const s=S.shifts.find(x=>x.id===lateId);if(s){if(v)s.late=v;else delete s.late}$('dlgLate').close();save();render()};
+$('lCancel').onclick=()=>$('dlgLate').close();
+document.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{$('lMin').value=b.dataset.chip});
+
+/* ---- PDF export (pages are drawn on canvas and wrapped into a PDF, so č ć š ž đ always work) ---- */
+function makePDF(pages){
+  const enc=new TextEncoder(),parts=[],offs=[];let len=0;
+  const push=b=>{const u=typeof b==='string'?enc.encode(b):b;parts.push(u);len+=u.length};
+  const PW=595.28,PH=841.89,n=pages.length;
+  push(new Uint8Array([37,80,68,70,45,49,46,52,10,37,226,227,207,211,10]));
+  offs[1]=len;push('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
+  offs[2]=len;push(`2 0 obj\n<</Type/Pages/Count ${n}/Kids[${pages.map((_,i)=>(3+3*i)+' 0 R').join(' ')}]>>\nendobj\n`);
+  pages.forEach((p,i)=>{
+    const pg=3+3*i,ct=pg+1,im=pg+2,cs=`q ${PW} 0 0 ${PH} 0 0 cm /Im0 Do Q`;
+    offs[pg]=len;push(`${pg} 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${PW} ${PH}]/Resources<</XObject<</Im0 ${im} 0 R>>>>/Contents ${ct} 0 R>>\nendobj\n`);
+    offs[ct]=len;push(`${ct} 0 obj\n<</Length ${cs.length}>>\nstream\n${cs}\nendstream\nendobj\n`);
+    offs[im]=len;push(`${im} 0 obj\n<</Type/XObject/Subtype/Image/Width ${p.w}/Height ${p.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${p.bytes.length}>>\nstream\n`);push(p.bytes);push('\nendstream\nendobj\n');
+  });
+  const total=3+3*n,xr=len;let x=`xref\n0 ${total}\n0000000000 65535 f \n`;
+  for(let k=1;k<total;k++)x+=String(offs[k]).padStart(10,'0')+' 00000 n \n';
+  push(x+`trailer\n<</Size ${total}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`);
+  return new Blob(parts,{type:'application/pdf'});
+}
+function exportPDF(noteText,withNotes){
+  if(!S.shifts.length&&!S.holters.length&&!S.scopes.length&&!(noteText||'').trim()){toast('Nema termina za izvoz.');return}
+  const W=1240,H=1754,M=80,LIM=H-M-70,FONT='"Segoe UI",Roboto,Helvetica,Arial,sans-serif',COL={t:80,d:270,s:630,l:920};
+  const pad=n=>String(n).padStart(2,'0'),cv=[];let g,y;
+  const newPage=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);cv.push(c);y=M+24};
+  const font=(w,px)=>{g.font=`${w} ${px}px ${FONT}`};
+  const fit=(t,w)=>{if(g.measureText(t).width<=w)return t;while(t.length>1&&g.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'};
+  const txt=(t,x,w,col)=>{   /* dugačko ime: prvo smanji slova (do 17px), tek onda skrati */
+    g.fillStyle=col;let px=+/(\d+)px/.exec(g.font)[1];
+    while(px>17&&g.measureText(t).width>w){px--;g.font=g.font.replace(/\d+px/,px+'px')}
+    g.fillText(fit(t,w),x,y);
+  };
+  const DC=[['Vreme',COL.t],['Lekar',COL.d],['Specijalnost',COL.s],['Kašnjenje',COL.l]];
+  const head=(name,cont,cols)=>{
+    g.fillStyle='#d8ebe9';g.fillRect(M,y,W-2*M,58);
+    font('600',28);g.fillStyle='#0d6a6d';g.fillText(fit(name+(cont?' (nastavak)':''),W-2*M-32),M+16,y+39);
+    y+=cols.length?102:84;font('400',20);g.fillStyle='#667679';
+    cols.forEach(([l,x])=>g.fillText(l,x,y));if(cols.length)y+=20;
+  };
+  const wrap=(t,w)=>{const out=[];let cur='';t.split(' ').forEach(word=>{const test=cur?cur+' '+word:word;if(!cur||g.measureText(test).width<=w)cur=test;else{out.push(cur);cur=word}});if(cur)out.push(cur);return out};
+  const now=new Date();
+  newPage();
+  font('700',46);g.fillStyle='#1b2a2c';g.fillText('Raspored lekara po ordinacijama',M,y+40);
+  font('400',22);g.fillStyle='#667679';
+  g.fillText(`Izvezeno: ${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}. u ${pad(now.getHours())}:${pad(now.getMinutes())}`,M,y+86);
+  y+=190;
+  ORDS.forEach((name,i)=>{
+    const sl=S.shifts.filter(s=>s.ord===i).sort((a,b)=>a.start.localeCompare(b.start));
+    if(!sl.length)return;
+    if(y+122+78>LIM)newPage();
+    head(name,false,DC);
+    sl.forEach(s=>{
+      const d=doc(s.doc),cnt=new Map();
+      (s.svcs||[]).forEach(v=>cnt.set(v.name,(cnt.get(v.name)||0)+1));
+      const items=[...cnt.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([n,c])=>`${n} ${c} ${c%10===1&&c%100!==11?'usluga':plSvc(c)}`);
+      font('400',20);const lines=items.length?wrap(`Usluge: ${items.join(', ')}.`,W-M-COL.d):[];
+      g.font=`italic 400 20px ${FONT}`;const nlines=withNotes&&s.note?wrap('Napomena: '+s.note.replace(/\s*\n\s*/g,' '),W-M-COL.d):[];
+      if(y+86+(lines.length?8+lines.length*30:0)+(nlines.length?8+nlines.length*30:0)>LIM){newPage();head(name,true,DC)}
+      y+=44;
+      font('700',25);txt(`${s.start}–${s.end}`,COL.t,170,'#0d6a6d');
+      if(d.id===GP_ID){font('600',25);txt(slotName(s),COL.d,COL.l-COL.d-20,'#1b2a2c')}
+      else{font('600',25);txt(d.name,COL.d,COL.s-COL.d-20,'#1b2a2c');font('400',23);txt(d.spec||'—',COL.s,COL.l-COL.s-20,'#667679')}
+      font(s.late?'700':'400',23);txt(s.late?`${s.late}min`:'Na vreme',COL.l,W-M-COL.l,s.late?'#b93d0b':'#1a7a3c');
+      font('400',20);g.fillStyle=items.length?'#4a5a5c':'#8a9798';
+      if(lines.length){y+=8;lines.forEach(l=>{y+=30;g.fillText(l,COL.d,y)})}
+      if(nlines.length){y+=8;g.font=`italic 400 20px ${FONT}`;g.fillStyle='#8a5a00';nlines.forEach(l=>{y+=30;g.fillText(l,COL.d,y)})}
+      g.fillStyle='#d2dbd9';g.fillRect(M,y+22,W-2*M,1.5);y+=34;
+    });
+    y+=56;
+  });
+  if(S.holters.length){
+    const HC=[['Satnica',80],['Pacijent',230],['Kardiolog',520],['Holter',765],['Radnja',900],['Odrađeno',1030]];
+    const hs=[...S.holters].sort((a,b)=>tkey(a.time).localeCompare(tkey(b.time))||a.name.localeCompare(b.name));
+    if(y+122+78>LIM)newPage();
+    head('Holteri',false,HC);
+    hs.forEach(h=>{
+      if(y+78>LIM){newPage();head('Holteri',true,HC)}
+      y+=44;
+      font(noTime(h.time)?'400':'700',noTime(h.time)?22:25);txt(showT(h.time),80,140,noTime(h.time)?'#667679':'#0d6a6d');
+      font('600',25);txt(h.name,230,275,'#1b2a2c');
+      font('400',23);txt(h.cardio||'—',520,235,'#4a5a5c');
+      txt(h.ekg&&h.ta?'EKG + TA':h.ekg?'EKG':'TA',765,125,'#1b2a2c');
+      txt(h.action==='stavlja'?'Stavlja':'Skida',900,120,'#1b2a2c');
+      font(h.done?'700':'400',23);txt(h.done?'Odrađeno':'Nije odrađeno',1030,W-M-1030,h.done?'#1a7a3c':'#667679');
+      g.fillStyle='#d2dbd9';g.fillRect(M,y+22,W-2*M,1.5);y+=34;
+    });
+    y+=40;
+  }
+  if(S.scopes.length){
+    const sc=[...S.scopes].sort((a,b)=>tkey(a.time).localeCompare(tkey(b.time))||a.name.localeCompare(b.name));
+    if(y+84+78>LIM)newPage();
+    head('Skopije',false,[]);
+    sc.forEach(k=>{
+      if(y+78>LIM){newPage();head('Skopije',true,[])}
+      y+=44;
+      font('600',25);const nw=Math.min(g.measureText(k.name).width,520);txt(k.name,COL.t,520,'#1b2a2c');
+      const kind=k.colo&&k.gastro?'gastro i kolono':k.colo?'kolono':'gastro';
+      font('400',24);txt(` – ${kind}, ${k.anes?'sa anestezijom':'bez anestezije'}`,COL.t+nw+4,W-M-(COL.t+nw+4),'#4a5a5c');
+      g.fillStyle='#d2dbd9';g.fillRect(M,y+22,W-2*M,1.5);y+=34;
+    });
+    y+=40;
+  }
+  const note=(noteText||'').trim();
+  if(note){
+    if(y+84+40>LIM)newPage();
+    head('Napomena',false,[]);
+    note.split('\n').forEach(par=>{
+      font('400',23);const lines=par.trim()?wrap(par.trim(),W-2*M-8):[''];
+      lines.forEach(l=>{
+        if(y+40>LIM){newPage();head('Napomena',true,[]);font('400',23)}
+        y+=40;if(l){g.fillStyle='#1b2a2c';g.fillText(l,M+8,y)}
+      });
+    });
+  }
+  cv.forEach((c,i)=>{const q=c.getContext('2d');q.font=`400 20px ${FONT}`;q.fillStyle='#667679';q.textAlign='center';q.fillText(`Strana ${i+1} od ${cv.length}`,W/2,H-50)});
+  const pages=cv.map(c=>{const bin=atob(c.toDataURL('image/jpeg',0.92).split(',')[1]),bytes=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)bytes[k]=bin.charCodeAt(k);return{bytes,w:W,h:H}});
+  const a=document.createElement('a');a.href=URL.createObjectURL(makePDF(pages));
+  a.download=dayId()+'.pdf';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+let pdfNoteText='';   /* napomena važi samo dok je program otvoren, ne čuva se u planu */
+$('clearBtn').onclick=()=>askConfirm('Obriši sve','Ovo će obrisati sve unete informacije, da li ste sigurni? Možete prethodno sačuvati fajl pre započinjanja novog.','Obriši sve').then(ok=>{
+  if(ok){S.shifts=[];S.holters=[];S.scopes=[];pdfNoteText='';save();render();toast('Sve uneto je obrisano.')}
+});
+$('pdfBtn').onclick=()=>{$('pdfNote').value=pdfNoteText;$('pdfWithNotes').checked=false;$('dlgPdf').showModal();$('pdfNote').focus()};
+$('pdfCancel').onclick=()=>{pdfNoteText=$('pdfNote').value;$('dlgPdf').close()};
+$('pdfGo').onclick=()=>{pdfNoteText=$('pdfNote').value;$('dlgPdf').close();exportPDF(pdfNoteText,$('pdfWithNotes').checked)};
+$('pdfNote').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();$('pdfGo').click()}});
+
+/* ---- save / load everything as one JSON file ---- */
+function saveFile(){
+  const now=new Date(),pad=n=>String(n).padStart(2,'0');
+  const payload={app:'ordination-planner',version:2,savedAt:now.toISOString(),data:{docs:S.docs,shifts:S.shifts,holters:S.holters,scopes:S.scopes}};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  a.download=dayId()+'.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast('Sačuvano u datoteku '+a.download);
+}
+/* Enter confirms the open dialog (unless focus is on a button, which then does its own thing) */
+const PRIMARY={dlgSwap:'swSwap',dlgSk:'skOk',dlg:'dOk',dlgLate:'lOk',dlgHol:'hOk',dlgSlotSvc:'ssOk',dlgAsk:'aYes'};
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||e.isComposing||!e.target.closest)return;
+  const d=e.target.closest('dialog'),id=d&&PRIMARY[d.id];
+  if(!id||$(id).hidden||e.target.closest('button'))return;
+  e.preventDefault();$(id).click();
+});
+async function okHours(...times){   /* upozorenje: vreme van radnog vremena */
+  const bad=[...new Set(times.filter(t=>t<WORK_FROM||t>WORK_TO))];
+  return !bad.length||askConfirm('Van radnog vremena',`Vreme ${bad.join(' i ')} je van radnog vremena (${WORK_FROM}–${WORK_TO}).\nSačuvati ipak?`,'Sačuvaj ipak');
+}
+function askConfirm(title,text,yes){
+  return new Promise(res=>{
+    const d=$('dlgAsk');$('aTitle').textContent=title;$('aText').textContent=text;$('aYes').textContent=yes||'Nastavi';
+    const done=v=>{d.onclose=null;d.close();res(v)};
+    $('aYes').onclick=()=>done(true);$('aNo').onclick=()=>done(false);d.onclose=()=>res(false);d.showModal();
+  });
+}
+function normalizeState(d){
+  if(!d||typeof d!=='object'||!Array.isArray(d.docs))throw new Error('Ovo nije datoteka iz planera ordinacija.');
+  let skipped=0;
+  const str=v=>typeof v==='string'?v.trim():'',cid=v=>typeof v==='string'?v.replace(/[^\w-]/g,''):'',arr=v=>Array.isArray(v)?v:[],tm=v=>parseTime(v==null?'':v);
+  const docs=[],ids=new Set(),byName=new Map(),same=new Map(),gpOld=new Map();
+  arr(d.docs).forEach(x=>{
+    x=x||{};const id=cid(x.id),name=str(x.name),spec=str(x.spec)==='Opšti hirurg'?'Hirurg':str(x.spec);   /* preimenovana specijalizacija */
+    if(!id||!name||!spec||ids.has(id)){skipped++;return}
+    if(id===GP_ID){ids.add(id);docs.push({id,name:'Opšta praksa',spec:GP_SPEC});return}
+    if(spec===GP_SPEC){gpOld.set(id,name);return}   /* pojedinačni lekari opšte prakse: sada se dodeljuju terminu „Opšta praksa“ */
+    const k=nameKey(name);
+    if(byName.has(k)){same.set(id,byName.get(k));skipped++;return}   /* isti lekar dva puta: spaja se u prvog */
+    ids.add(id);byName.set(k,id);docs.push({id,name,spec});
+  });
+  if(!ids.has(GP_ID)){ids.add(GP_ID);docs.push({id:GP_ID,name:'Opšta praksa',spec:GP_SPEC})}
+  const shifts=[];
+  arr(d.shifts).forEach(x=>{
+    x=x||{};let dId=same.get(cid(x.doc))||cid(x.doc),gp='';const ord=Number(x.ord),start=tm(x.start),end=tm(x.end);
+    if(gpOld.has(dId)){gp=gpOld.get(dId);dId=GP_ID}else if(dId===GP_ID)gp=str(x.gp).slice(0,80);
+    if(!(ids.has(dId)&&Number.isInteger(ord)&&ord>=0&&ord<ORDS.length&&start&&end&&start<end)){skipped++;return}
+    const o={id:cid(x.id)||uid(),doc:dId,ord,start,end},late=parseInt(x.late,10);
+    if(gp)o.gp=gp;
+    if(late>0)o.late=Math.min(late,600);
+    if(x.done)o.done=true;
+    let nt=str(x.note).slice(0,NOTE_MAX);if(/[\ud800-\udbff]$/.test(nt))nt=nt.slice(0,-1);   /* ne preseci emoji na pola */
+    if(nt)o.note=nt;
+    const sv=arr(x.svcs).filter(v=>v&&str(v.name)&&tm(v.time)).map(v=>({id:cid(v.id)||uid(),name:str(v.name),time:tm(v.time)}));
+    if(sv.length)o.svcs=sv;
+    shifts.push(o);
+  });
+  const holters=[];
+  arr(d.holters).forEach(x=>{
+    x=x||{};const name=str(x.name),time=tm(x.time);
+    if(!(name&&time&&(x.ekg||x.ta)&&(x.action==='stavlja'||x.action==='skida'))){skipped++;return}
+    const o={id:cid(x.id)||uid(),name,ekg:!!x.ekg,ta:!!x.ta,action:x.action,time};
+    if(str(x.cardio))o.cardio=str(x.cardio);
+    if(x.done)o.done=true;
+    holters.push(o);
+  });
+  const scopes=[];
+  arr(d.scopes).forEach(x=>{
+    x=x||{};const name=str(x.name),time=tm(x.time),down=!!x.down;
+    if(!(name&&time&&(x.colo||x.gastro))){skipped++;return}
+    scopes.push({id:cid(x.id)||uid(),name,colo:!!x.colo,gastro:!!x.gastro,anes:!!x.anes,time,up:!!x.up||down,down});
+  });
+  return {state:{docs,shifts,holters,scopes,dockOpen:!!d.dockOpen},skipped};
+}
+function loadStored(){
+  try{const r=localStorage.getItem(KEY);if(r)return normalizeState(JSON.parse(r)).state}catch(e){}
+  return {docs:rosterDocs(),shifts:[],holters:[],scopes:[],dockOpen:false};
+}
+$('saveBtn').onclick=saveFile;
+$('loadBtn').onclick=()=>$('loadFile').click();
+$('loadFile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      const raw=JSON.parse(r.result);
+      if(!raw||raw.app!=='ordination-planner'||!raw.data)throw new Error('Ovo nije datoteka iz planera ordinacija.');
+      const {state:n,skipped}=normalizeState(raw.data);
+      const ok=await askConfirm('Učitavanje postavke',`Datoteka „${f.name}“ sadrži: ${n.docs.length} lekara, ${n.shifts.length} termina, ${n.holters.length} pacijenata za holtere, ${n.scopes.length} skopija.\n\nUčitavanjem se zamenjuje sve što je trenutno u programu.`,'Učitaj');
+      if(!ok)return;
+      S={...n,dockOpen:S.dockOpen};
+      save();fillSpecSelect();render();
+      toast(`Učitano: ${n.docs.length} lekara, ${n.shifts.length} termina, ${n.holters.length} holtera, ${n.scopes.length} skopija.`+(skipped?` Preskočeno neispravnih stavki: ${skipped}.`:''));
+    }catch(err){toast(err instanceof SyntaxError?'Datoteka nije ispravna (nije JSON).':err.message)}
+  };
+  r.onerror=()=>toast('Datoteku nije moguće pročitati.');
+  r.readAsText(f);e.target.value='';
+};
+S=loadStored();
+$('noticeX').onclick=()=>{$('notice').hidden=true};
+try{localStorage.setItem(KEY+'-test','1');localStorage.removeItem(KEY+'-test')}catch(e){storageOk=false;showNotice('storage',NO_STORAGE)}
+window.addEventListener('storage',e=>{   /* program je izmenjen u drugom prozoru */
+  if(e.key!==KEY)return;
+  showNotice('tab','Podaci su izmenjeni u drugom prozoru programa. Osvežite podatke, inače će čuvanje iz ovog prozora prepisati te izmene.','Osveži podatke',()=>{S={...loadStored(),dockOpen:S.dockOpen};fillSpecSelect();render();$('notice').hidden=true});
+});
+setDock(S.dockOpen,false);
+showToday();
+fillSpecSelect();
+render();
+</script>
+</body>
+</html>
