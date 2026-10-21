@@ -239,7 +239,7 @@ aside h1{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ipanel{position:relative;overflow:auto;padding:22px 26px;min-height:0}
 .ipanel h2{margin:0 36px 12px 0;font:600 22px Georgia,serif}
 .ipanel h3{margin:18px 0 6px;font-size:16px}
-.ipanel h4{margin:14px 0 4px;font-size:14px}
+.ipanel h4{margin:16px 0 4px;font:700 15px "Segoe UI",system-ui,-apple-system,sans-serif;color:var(--teal)}
 .ipanel p,.ipanel ul,.ipanel ol{margin:0 0 10px}
 .ipanel ul,.ipanel ol{padding-left:22px}
 .ipanel a{color:var(--teal)}
@@ -989,7 +989,7 @@ function ghStat(){
 function ghQueue(){
   if(!ghTok)return;
   ghPending=true;clearTimeout(ghTimer);ghStat();
-  ghTimer=setTimeout(ghWrite,1500);   /* više brzih izmena ide u jedan upis */
+  ghTimer=setTimeout(ghWrite,5000);   /* sve izmene u roku od 5 s idu u jedan upis */
 }
 async function ghInit(){   /* potpuno prazna repozitorija (bez ijednog zapisa) ne prima upise, pa se prvo doda README */
   if(ghInit.ok)return;
@@ -1023,6 +1023,7 @@ function ghFail(e){
   if(!ghRetry)ghRetry=setInterval(()=>{if(ghPending&&!ghBusy)ghWrite()},30000);
 }
 window.addEventListener('online',()=>{if(ghTok&&ghPending)ghWrite()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&ghTok&&ghPending&&!ghErr)ghWrite()});   /* kartica sklonjena ili pregledač umanjen: sačuvaj odmah, ne čekaj 5 s */
 /* šifrovanje: repozitorija je javna, pa se plan šalje zaključan (AES-GCM, šifra izvedena iz GitHub ključa) */
 const b64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode(...u.subarray(i,i+8192));return btoa(s)};
 const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
