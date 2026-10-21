@@ -594,7 +594,7 @@ $('addForm').onsubmit=e=>{
     $('addErr').textContent='Lekar sa tim imenom već postoji u listi.';$('newName').classList.add('bad');$('newName').focus();return;
   }
   clearAddErr();
-  S.docs.push({id:uid(),name,spec});
+  S.docs.push({id:uid(),name,spec,added:new Date().toISOString().slice(0,10)});   /* datum: za spisak dodatih lekara */
   $('newName').value='';$('newSpec').value='';$('q').value='';
   save();render();$('newName').focus();
 };
@@ -1015,7 +1015,7 @@ async function ghWrite(){
   const tok=ghTok;
   try{
     await ghInit();
-    const tree=await ghPost('/git/trees',{tree:[{path:GH_FILE,mode:'100644',type:'blob',content:JSON.stringify(await ghLock(filePayload()))}]});
+    const tree=await ghPost('/git/trees',{tree:[{path:GH_FILE,mode:'100644',type:'blob',content:JSON.stringify(await ghLock(filePayload()))},{path:'dodati-lekari.md',mode:'100644',type:'blob',content:addedDocsText()}]});
     const c=await ghPost('/git/commits',{message:'Plan',tree:tree.sha,parents:[]});   /* bez roditelja: prethodno stanje se ne čuva */
     try{await ghPost('/git/refs/heads/'+GH_BRANCH,{sha:c.sha,force:true},'PATCH')}
     catch(e){if(e.status!==422&&e.status!==404)throw e;await ghPost('/git/refs',{ref:'refs/heads/'+GH_BRANCH,sha:c.sha})}   /* prvi upis: grana još ne postoji */
@@ -1035,6 +1035,12 @@ function ghFail(e){
 }
 window.addEventListener('online',()=>{if(ghTok&&ghPending)ghWrite()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&ghTok&&ghPending&&!ghErr)ghWrite()});   /* kartica sklonjena ili pregledač umanjen: sačuvaj odmah, ne čekaj 5 s */
+function addedDocsText(){   /* nešifrovan spisak lekara dodatih kroz program (samo ime, specijalnost i datum), da bi se kasnije prebacili u ROSTER */
+  const known=new Set(ROSTER_KEYS());
+  const ds=S.docs.filter(d=>d.id!==GP_ID&&!known.has(nameKey(d.name))).sort((a,b)=>(a.added||'').localeCompare(b.added||'')||a.name.localeCompare(b.name));
+  return '# Lekari dodati kroz program\n\nPlaner sam pravi ovaj spisak. Kad se lekar doda u glavni spisak, nestaje odavde.\n\n'+
+    (ds.length?ds.map(d=>`- ${d.name} — ${d.spec}`+(d.added?` (dodat ${d.added.split('-').reverse().join('.')}.)`:'')).join('\n'):'Nema.')+'\n';
+}
 /* šifrovanje: repozitorija je javna, pa se plan šalje zaključan (AES-GCM, šifra izvedena iz GitHub ključa) */
 const b64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode(...u.subarray(i,i+8192));return btoa(s)};
 const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
@@ -1181,7 +1187,7 @@ function normalizeState(d){
     if(spec===GP_SPEC){gpOld.set(id,name);return}   /* pojedinačni lekari opšte prakse: sada se dodeljuju terminu „Opšta praksa“ */
     const k=nameKey(name);
     if(byName.has(k)){same.set(id,byName.get(k));skipped++;return}   /* isti lekar dva puta: spaja se u prvog */
-    ids.add(id);byName.set(k,id);docs.push({id,name,spec});
+    ids.add(id);byName.set(k,id);const o={id,name,spec};if(/^\d{4}-\d\d-\d\d$/.test(x.added))o.added=x.added;docs.push(o);
   });
   if(!ids.has(GP_ID)){ids.add(GP_ID);docs.push({id:GP_ID,name:'Opšta praksa',spec:GP_SPEC})}
   const shifts=[];
