@@ -15,7 +15,7 @@ Kako se menja:
 *Nalazi stižu na mail.*
 
 ### Dr Matilda Đolai — GIT, ginekologija
-- Dr P. Petrović
+- Dr Predrag Petrović
 
 ### Dr Sandra Trivunović Dajko — urologija
 - Dr P. Popov
@@ -91,7 +91,7 @@ Kako se menja:
 *Nalazi stižu u laboratoriju (suteren).*
 
 ### Dr Sandra Trivunović Dajko — urologija
-- Dr D. Jeremić
+- Dr Dimitrije Jeremić
 
 ### Mikrobiološka analiza endometrijuma, ispirka i bioptata
 

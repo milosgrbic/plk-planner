@@ -424,15 +424,15 @@ const ROSTER={
 'Grudna hirurgija':['Ivan Kuhajda'],
 'Dečji hirurg':['Slobodan Grebeldinger','Radoica Jokić','Nenad Žakula'],
 'Ginekolog':['Goran Malenković','Luka Anđelić','Aleksandar Babić','Klara Birinji Milosavljević','Bojana Gutić','Jelena Meandžija'],
-'Urolog':['Paunel Popov','Borislav Njegovan','Stefan Veselinović','Jovan Radojević'],
+'Urolog':['Paunel Popov','Borislav Njegovan','Stefan Veselinović','Jovan Radojević','Dimitrije Jeremić'],
 'Anesteziolog':['Jovan Stričević','Zoran Dragić'],
-'Pedijatar':['Snežana Blažić','Ljiljana Ristovski','Tatiana Baigerov','Nataša Kaćanski','Ana Vasilevski Lazarević','Draženka Todorović Medić','Biljana Petrović','Mikloš Njiradi'],
+'Pedijatar':['Snežana Blažić','Ljiljana Ristovski','Tatiana Baigerov','Nataša Kaćanski','Ana Vasilevski Lazarević','Draženka Todorović Medić','Biljana Petrović','Mikloš Njiradi','Mario Jelić'],
 'Endokrinolog':['Blaženko Vuković'],
 'Kardiolog':['Dušan Živković','Miodrag Golubović'],
 'Nuklearna medicina':['Jasna Mihailović'],
 'Radiolog':['Kristina Koprivica','Sanja Stojanović','Branislava Bogdanović','Jadranka Dragaš','Marija Grdinić','Aleksandar Mladenović'],
-'Dermatolog':['Mirjana Elhag'],
-'Gastroenterolog':['Stevan Trbojević','Dušan Grujić'],
+'Dermatolog':['Mirjana Elhag','Vesna Babić'],
+'Gastroenterolog':['Stevan Trbojević','Dušan Grujić','Predrag Petrović'],
 'Interna medicina':['Kristina Jovanović','Tatjana Roganović'],
 'Pulmolog':['Stevan Somborac','Svetlana Jovanović'],
 'ORL':['Zoran Dukić','Lili Džilvidžieva','Jasna Jovićević','Ivan Sivčev','Vanja Tovilović','Milica Prtina'],
@@ -451,6 +451,15 @@ let S;   /* stanje programa, učitava se na kraju skripte (loadStored) */
 const GP_ID='opsta-praksa',GP_SPEC='Opšta praksa';   /* „Opšta praksa“ je zamenski lekar (joker): u terminu mu se dodeli pravi lekar */
 const GP_NAMES=['Dr Tamara Gavrić','Dr Branko Dakić','Dr Jelena Repić','Dr Milica Trikić','Dr Tara Šljukić','Dr Ana Šimunđa Vuković','Dr Ljiljana Veličković','Dr Zorana Ilić','Dr Tamara Krstić','Dr Teodora Jokić'];
 const nameKey=n=>n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/đ/g,'dj').replace(/^dr\.?\s+/,'').replace(/\s+/g,' ').trim().replace(/[.,;]+$/,'');   /* isti lekar: bez obzira na velika slova, kvačice i „Dr“ */
+const ROSTER_KEYS=()=>Object.values(ROSTER).flat().map(n=>nameKey(n));
+const ROSTER_LATE=['Dimitrije Jeremić','Predrag Petrović','Vesna Babić','Mario Jelić'];   /* dodati posle prvih sačuvanih planova (pre nego što se pamtilo rosterSeen) */
+function addRoster(st,seen){   /* lekari dodati u ROSTER posle čuvanja ulaze i u sačuvan spisak; obrisani se ne vraćaju */
+  if(!seen){const late=new Set(ROSTER_LATE.map(nameKey));seen=ROSTER_KEYS().filter(k=>!late.has(k))}
+  const have=new Set(st.docs.map(d=>nameKey(d.name))),known=new Set(seen);
+  Object.entries(ROSTER).forEach(([spec,names])=>names.forEach(n=>{const k=nameKey(n);if(!known.has(k)&&!have.has(k)){st.docs.push({id:uid(),name:'Dr '+n,spec});have.add(k)}}));
+  st.rosterSeen=[...new Set([...seen,...ROSTER_KEYS()])];
+  return st;
+}
 const rosterDocs=()=>[...Object.entries(ROSTER).flatMap(([spec,names])=>names.map(n=>({id:uid(),name:'Dr '+n,spec}))),{id:GP_ID,name:'Opšta praksa',spec:GP_SPEC}];
 /* specijalizacije i usluge žive u programu (ROSTER/SERVICES gore), ne u sačuvanim podacima: dopuna se uvek odmah vidi */
 const SPECS=SPEC_ORDER.map(name=>({name,services:SERVICES[name]||[]}));
@@ -873,6 +882,19 @@ function exportPDF(noteText,withNotes){
   font('400',22);g.fillStyle='#667679';
   g.fillText(`Izvezeno: ${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}. u ${pad(now.getHours())}:${pad(now.getMinutes())}`,M,y+86);
   y+=190;
+  const note=(noteText||'').trim();
+  if(note){   /* napomena ide na sam početak, odmah ispod naslova */
+    if(y+84+40>LIM)newPage();
+    head('Napomena',false,[]);
+    note.split('\n').forEach(par=>{
+      font('400',23);const lines=par.trim()?wrap(par.trim(),W-2*M-8):[''];
+      lines.forEach(l=>{
+        if(y+40>LIM){newPage();head('Napomena',true,[]);font('400',23)}
+        y+=40;if(l){g.fillStyle='#1b2a2c';g.fillText(l,M+8,y)}
+      });
+    });
+    y+=56;
+  }
   ORDS.forEach((name,i)=>{
     const sl=S.shifts.filter(s=>s.ord===i).sort((a,b)=>a.start.localeCompare(b.start));
     if(!sl.length)return;
@@ -929,18 +951,6 @@ function exportPDF(noteText,withNotes){
     });
     y+=40;
   }
-  const note=(noteText||'').trim();
-  if(note){
-    if(y+84+40>LIM)newPage();
-    head('Napomena',false,[]);
-    note.split('\n').forEach(par=>{
-      font('400',23);const lines=par.trim()?wrap(par.trim(),W-2*M-8):[''];
-      lines.forEach(l=>{
-        if(y+40>LIM){newPage();head('Napomena',true,[]);font('400',23)}
-        y+=40;if(l){g.fillStyle='#1b2a2c';g.fillText(l,M+8,y)}
-      });
-    });
-  }
   cv.forEach((c,i)=>{const q=c.getContext('2d');q.font=`400 20px ${FONT}`;q.fillStyle='#667679';q.textAlign='center';q.fillText(`Strana ${i+1} od ${cv.length}`,W/2,H-50)});
   const pages=cv.map(c=>{const bin=atob(c.toDataURL('image/jpeg',0.92).split(',')[1]),bytes=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)bytes[k]=bin.charCodeAt(k);return{bytes,w:W,h:H}});
   const a=document.createElement('a');a.href=URL.createObjectURL(makePDF(pages));
@@ -964,7 +974,7 @@ function saveFile(){
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   toast('Sačuvano u datoteku '+a.download);
 }
-const filePayload=()=>({app:'ordination-planner',version:2,savedAt:new Date().toISOString(),data:{docs:S.docs,shifts:S.shifts,holters:S.holters,scopes:S.scopes}});
+const filePayload=()=>({app:'ordination-planner',version:2,savedAt:new Date().toISOString(),data:{docs:S.docs,shifts:S.shifts,holters:S.holters,scopes:S.scopes,rosterSeen:S.rosterSeen}});
 
 /* ---- automatsko čuvanje na GitHub-u: grana „podaci“ uvek ima samo jedan zapis (bez istorije) ---- */
 const GH_REPO='milosgrbic/plk-planner',GH_BRANCH='podaci',GH_FILE='plan.json',GH_KEY=KEY+'-gh';
@@ -1204,11 +1214,12 @@ function normalizeState(d){
     if(!(name&&time&&(x.colo||x.gastro))){skipped++;return}
     scopes.push({id:cid(x.id)||uid(),name,colo:!!x.colo,gastro:!!x.gastro,anes:!!x.anes,time,up:!!x.up||down,down});
   });
-  return {state:{docs,shifts,holters,scopes,dockOpen:!!d.dockOpen},skipped};
+  const seen=Array.isArray(d.rosterSeen)?d.rosterSeen.filter(k=>typeof k==='string'):null;
+  return {state:addRoster({docs,shifts,holters,scopes,dockOpen:!!d.dockOpen},seen),skipped};
 }
 function loadStored(){
   try{const r=localStorage.getItem(KEY);if(r)return normalizeState(JSON.parse(r)).state}catch(e){}
-  return {docs:rosterDocs(),shifts:[],holters:[],scopes:[],dockOpen:false};
+  return {docs:rosterDocs(),shifts:[],holters:[],scopes:[],dockOpen:false,rosterSeen:ROSTER_KEYS()};
 }
 $('saveBtn').onclick=saveFile;
 $('loadBtn').onclick=()=>$('loadFile').click();
