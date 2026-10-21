@@ -32,6 +32,11 @@ select{font:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);bor
 .badge.nb{background:#ffe3b8;color:#8a4b00;cursor:help}
 .x.lt.nbtn:hover{background:#ffe3b8;color:#8a4b00}
 #dlgNote{width:min(480px,92vw)}
+#dlgGh{width:min(460px,92vw)}
+#dlgGh ol{margin:0 0 14px;padding-left:20px;font-size:13px;color:var(--mute)}
+#dlgGh a{color:var(--teal)}
+#ghTok{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+#ghOff{margin-right:auto}
 .today{display:block;margin-top:2px;font-size:14px;font-weight:700;color:var(--teal)}
 #ntDel{margin-right:auto}
 .ta{position:relative}
@@ -250,7 +255,7 @@ label{font-size:13px;color:var(--mute);display:grid;gap:4px}
   <div class="notice" id="notice" role="alert" hidden><span id="noticeText"></span><button class="btn" id="noticeBtn" type="button" hidden>Osveži podatke</button><button class="x" id="noticeX" type="button" aria-label="Zatvori">×</button></div>
   <header>
     <div class="hl"><h2>Ordinacije</h2><span class="today" id="today"></span></div>
-    <div class="io"><span class="fstat" id="fileStat" role="status"></span><button class="btn ghost" id="fileBtn" type="button" title="Izaberite datoteku na računaru u koju se svaka izmena automatski čuva"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM9 3v5h6V3M9 14h7M9 17h5"/></svg><span id="fileLbl">Poveži datoteku</span></button><button class="btn ghost danger" id="clearBtn" type="button" title="Briše sve unete termine, holtere i skopije"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Obriši sve</button><button class="btn ghost" id="saveBtn" type="button" title="Sačuva sve (lekare, ordinacije, termine, usluge i holtere) u jednu datoteku"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/></svg>Sačuvaj</button><button class="btn ghost" id="loadBtn" type="button" title="Učita ranije sačuvanu datoteku i zameni trenutno stanje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 20h14"/></svg>Učitaj</button><input type="file" id="loadFile" accept=".json,application/json" hidden></div></header>
+    <div class="io"><span class="fstat" id="fileStat" role="status"></span><button class="btn ghost" id="ghBtn" type="button" title="Podaci se automatski čuvaju u vašoj privatnoj GitHub repozitoriji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5z"/></svg><span id="ghLbl">Poveži GitHub</span></button><button class="btn ghost danger" id="clearBtn" type="button" title="Briše sve unete termine, holtere i skopije"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Obriši sve</button><button class="btn ghost" id="saveBtn" type="button" title="Sačuva sve (lekare, ordinacije, termine, usluge i holtere) u jednu datoteku"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/></svg>Sačuvaj</button><button class="btn ghost" id="loadBtn" type="button" title="Učita ranije sačuvanu datoteku i zameni trenutno stanje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 20h14"/></svg>Učitaj</button><input type="file" id="loadFile" accept=".json,application/json" hidden></div></header>
   <div class="ordarea"><div id="grid"></div></div>
   <section class="dock" id="dock" aria-label="Holteri i skopije">
     <button class="dockbar" id="dockBar" type="button" aria-expanded="false" aria-controls="dockBody" title="Prikaži ili sakrij holtere i skopije">
@@ -362,6 +367,20 @@ label{font-size:13px;color:var(--mute);display:grid;gap:4px}
   <label class="chk" style="margin:-4px 0 14px"><input type="checkbox" id="pdfWithNotes"> Uvrsti i sve napomene o doktorima</label>
   <div class="acts"><button class="btn ghost" id="pdfCancel" type="button">Otkaži</button><button class="btn" id="pdfGo" type="button" title="Prečica: Ctrl+Enter">Izvezi PDF</button></div>
 </dialog>
+<dialog id="dlgGh">
+  <h4>Čuvanje na GitHub-u</h4>
+  <p>Plan se automatski čuva u privatnoj repozitoriji <b>milosgrbic/plk-planner</b> (grana „podaci“). Čuva se samo trenutno stanje, bez istorije: kad obrišete dan, stari podaci nestaju.</p>
+  <ol>
+    <li>Otvorite <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">pravljenje GitHub ključa</a>.</li>
+    <li>Ime: npr. „Planer“. Rok: najduži ponuđen.</li>
+    <li>Repository access: <b>Only select repositories</b> → plk-planner.</li>
+    <li>Permissions → Repository → <b>Contents: Read and write</b>.</li>
+    <li>Kliknite „Generate token“ i nalepite ključ ovde.</li>
+  </ol>
+  <label>GitHub ključ<input id="ghTok" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
+  <div class="err" id="ghErr"></div>
+  <div class="acts"><button class="btn ghost danger" id="ghOff" type="button" hidden>Prekini vezu</button><button class="btn ghost" id="ghCancel" type="button">Otkaži</button><button class="btn" id="ghOk" type="button">Poveži</button></div>
+</dialog>
 <dialog id="dlgAsk"><h4 id="aTitle"></h4><p id="aText" style="white-space:pre-line"></p><div class="acts"><button class="btn ghost" id="aNo" type="button">Otkaži</button><button class="btn" id="aYes" type="button">Nastavi</button></div></dialog>
 <div id="tip" role="tooltip"></div>
 <div id="toast" role="status"></div>
@@ -417,7 +436,7 @@ function showNotice(kind,text,btnLabel,onBtn){
   b.hidden=!btnLabel;if(btnLabel){b.textContent=btnLabel;b.onclick=onBtn}n.hidden=false;
 }
 const save=()=>{
-  fQueue();
+  ghQueue();
   try{localStorage.setItem(KEY,JSON.stringify(S));localStorage.setItem(KEY+'-at',String(Date.now()));if(!storageOk){storageOk=true;if($('notice').dataset.kind==='storage')$('notice').hidden=true}}
   catch(e){if(storageOk){storageOk=false;showNotice('storage',NO_STORAGE)}}
 };
@@ -922,105 +941,112 @@ function saveFile(){
 }
 const filePayload=()=>({app:'ordination-planner',version:2,savedAt:new Date().toISOString(),data:{docs:S.docs,shifts:S.shifts,holters:S.holters,scopes:S.scopes}});
 
-/* ---- automatsko čuvanje u datoteku na računaru (radi u Chrome-u i Edge-u) ---- */
-const FILE_OK='showSaveFilePicker' in window;
-let fh=null,fTimer=null,fPending=false,fBusy=false,fAgain=false,fErr=false,fNeedPerm=false,fAt=null;
-function idb(mode,fn){   /* veza sa datotekom se pamti u IndexedDB, da bi radila i posle zatvaranja programa */
-  return new Promise((res,rej)=>{
-    const o=indexedDB.open(KEY,1);o.onupgradeneeded=()=>o.result.createObjectStore('h');o.onerror=()=>rej(o.error);
-    o.onsuccess=()=>{try{const t=o.result.transaction('h',mode),r=fn(t.objectStore('h'));t.oncomplete=()=>res(r.result);t.onerror=()=>rej(t.error)}catch(e){rej(e)}};
-  });
+/* ---- automatsko čuvanje na GitHub-u: grana „podaci“ uvek ima samo jedan zapis (bez istorije) ---- */
+const GH_REPO='milosgrbic/plk-planner',GH_BRANCH='podaci',GH_FILE='plan.json',GH_KEY=KEY+'-gh';
+let ghTok='',ghTimer=null,ghPending=false,ghBusy=false,ghAgain=false,ghErr='',ghAt=null,ghRetry=null;
+try{ghTok=localStorage.getItem(GH_KEY)||''}catch(e){}
+async function gh(path,opt={}){
+  const r=await fetch('https://api.github.com/repos/'+GH_REPO+path,{...opt,cache:'no-store',headers:{Authorization:'Bearer '+ghTok,'X-GitHub-Api-Version':'2022-11-28',Accept:opt.raw?'application/vnd.github.raw+json':'application/vnd.github+json',...(opt.body?{'Content-Type':'application/json'}:{})}});
+  if(!r.ok){const e=new Error('GitHub '+r.status);e.status=r.status;throw e}
+  return opt.raw?r.text():r.json();
 }
-const getHandle=()=>idb('readonly',s=>s.get('file')).catch(()=>null);
-const putHandle=h=>idb('readwrite',s=>s.put(h,'file')).catch(()=>{});
+const ghPost=(path,body,method='POST')=>gh(path,{method,body:JSON.stringify(body)});
 const hhmm=d=>d.toLocaleTimeString('sr-Latn',{hour:'2-digit',minute:'2-digit'});
-function fStat(){
-  const s=$('fileStat');
-  $('fileLbl').textContent=fh?'Datoteka: '+fh.name:'Poveži datoteku';
-  let t='',k='';
-  if(!fh)t='Čuva se samo u pregledaču';
-  else if(fNeedPerm){t='Automatsko čuvanje je pauzirano';k='warn'}
-  else if(fErr){t='Čuvanje u datoteku nije uspelo';k='warn'}
-  else if(fPending||fBusy)t='Čuvanje…';
-  else if(fAt){t='Sačuvano u '+hhmm(fAt);k='ok'}
-  s.textContent=t;s.className='fstat '+k;
+const ghWhy=e=>e.status===401?'GitHub ključ nije ispravan ili je istekao.':e.status===403||e.status===404?'Ključ nema dozvolu za repozitoriju '+GH_REPO+' (Contents: Read and write).':'Nema veze sa GitHub-om (internet?).';
+function ghStat(){
+  const s=$('fileStat');let t='',k='';
+  $('ghLbl').textContent=ghTok?'GitHub':'Poveži GitHub';
+  if(!ghTok)t='Čuva se samo u pregledaču';
+  else if(ghErr){t='Nije sačuvano na GitHub-u';k='warn'}
+  else if(ghPending||ghBusy)t='Čuvanje…';
+  else if(ghAt){t='Sačuvano na GitHub-u u '+hhmm(ghAt);k='ok'}
+  s.textContent=t;s.className='fstat '+k;s.title=ghErr;
 }
-function fQueue(){
-  if(!fh)return;
-  fPending=true;clearTimeout(fTimer);fStat();
-  if(!fNeedPerm)fTimer=setTimeout(fWrite,300);
+function ghQueue(){
+  if(!ghTok)return;
+  ghPending=true;clearTimeout(ghTimer);ghStat();
+  ghTimer=setTimeout(ghWrite,1500);   /* više brzih izmena ide u jedan upis */
 }
-async function fWrite(){
-  clearTimeout(fTimer);
-  if(!fh||fNeedPerm)return;
-  if(fBusy){fAgain=true;return}
-  fBusy=true;fAgain=false;fPending=false;fStat();
-  try{const w=await fh.createWritable();await w.write(JSON.stringify(filePayload(),null,2));await w.close();fAt=new Date();
-    if(fErr){fErr=false;if($('notice').dataset.kind==='file')$('notice').hidden=true}}
-  catch(e){
-    fPending=true;
-    if(e.name==='NotAllowedError'){fNeedPerm=true;showNotice('file',`Pregledač traži dozvolu za čuvanje u „${fh.name}“.`,'Nastavi čuvanje',fGrant)}
-    else if(!fErr){fErr=true;showNotice('file',`Izmene nije moguće sačuvati u „${fh.name}“ (datoteka je možda premeštena ili otvorena u drugom programu). Podaci su i dalje sačuvani u pregledaču.`,'Izaberi datoteku',fConnect)}
+async function ghWrite(){
+  clearTimeout(ghTimer);
+  if(!ghTok)return;
+  if(ghBusy){ghAgain=true;return}
+  ghBusy=true;ghAgain=false;ghPending=false;ghStat();
+  const tok=ghTok;
+  try{
+    const tree=await ghPost('/git/trees',{tree:[{path:GH_FILE,mode:'100644',type:'blob',content:JSON.stringify(filePayload(),null,2)}]});
+    const c=await ghPost('/git/commits',{message:'Plan',tree:tree.sha,parents:[]});   /* bez roditelja: prethodno stanje se ne čuva */
+    try{await ghPost('/git/refs/heads/'+GH_BRANCH,{sha:c.sha,force:true},'PATCH')}
+    catch(e){if(e.status!==422&&e.status!==404)throw e;await ghPost('/git/refs',{ref:'refs/heads/'+GH_BRANCH,sha:c.sha})}   /* prvi upis: grana još ne postoji */
+    ghAt=new Date();
+    if(ghErr){ghErr='';clearInterval(ghRetry);ghRetry=null;if($('notice').dataset.kind==='gh')$('notice').hidden=true}
+  }catch(e){
+    if(tok===ghTok){ghPending=true;ghFail(e)}
   }
-  fBusy=false;fStat();
-  if(fAgain)fWrite();
+  ghBusy=false;ghStat();
+  if(ghAgain)ghWrite();
 }
-async function fGrant(){
-  try{if(await fh.requestPermission({mode:'readwrite'})==='granted'){fNeedPerm=false;$('notice').hidden=true;await fSync()}}catch(e){}
-  fStat();
+function ghFail(e){
+  const first=!ghErr;ghErr=ghWhy(e);
+  if(e.status===401||e.status===403||e.status===404){clearInterval(ghRetry);ghRetry=null;showNotice('gh',ghErr+' Izmene se i dalje čuvaju u pregledaču.','Unesi ključ',ghOpen);return}
+  if(first)showNotice('gh','Izmene trenutno nije moguće sačuvati na GitHub-u (nema interneta?). Pokušava se ponovo automatski; podaci su u međuvremenu sačuvani u pregledaču.','Pokušaj sada',ghWrite);
+  if(!ghRetry)ghRetry=setInterval(()=>{if(ghPending&&!ghBusy)ghWrite()},30000);
 }
-async function fRead(h){   /* vraća {state,savedAt}, null za praznu datoteku; greška ako datoteka nije iz planera */
-  const t=(await (await h.getFile()).text()).trim();if(!t)return null;
-  let raw;try{raw=JSON.parse(t)}catch(e){throw new Error('Datoteka „'+h.name+'“ nije iz planera ordinacija.')}
-  if(!raw||raw.app!=='ordination-planner'||!raw.data)throw new Error('Datoteka „'+h.name+'“ nije iz planera ordinacija.');
+window.addEventListener('online',()=>{if(ghTok&&ghPending)ghWrite()});
+async function ghRead(){   /* vraća {state,savedAt} ili null ako na GitHub-u još nema plana */
+  let t;
+  try{t=await gh('/contents/'+GH_FILE+'?ref='+GH_BRANCH,{raw:true})}catch(e){if(e.status===404)return null;throw e}
+  const raw=JSON.parse(t);
+  if(!raw||raw.app!=='ordination-planner'||!raw.data)throw new Error('Plan na GitHub-u nije ispravan.');
   return {state:normalizeState(raw.data).state,savedAt:Date.parse(raw.savedAt)||0};
 }
 const sameData=(a,b)=>['docs','shifts','holters','scopes'].every(k=>JSON.stringify(a[k])===JSON.stringify(b[k]));
-function useState(n){S={...n,dockOpen:S.dockOpen};save();fillSpecSelect();render()}
-async function fSync(){   /* posle ponovnog otvaranja: noviji podaci (pregledač ili datoteka) pobeđuju */
-  let f;
-  try{f=await fRead(fh)}catch(e){fErr=true;fStat();showNotice('file',e.name==='NotFoundError'?`Datoteka „${fh.name}“ više ne postoji ili je premeštena. Izaberite gde da se podaci čuvaju.`:e.message,'Izaberi datoteku',fConnect);return}
-  if(f&&!sameData(f.state,S)&&f.savedAt>(Number(localStorage.getItem(KEY+'-at'))||0)){useState(f.state);toast('Učitani su noviji podaci iz datoteke „'+fh.name+'“.')}
-  else fWrite();
+function useState(n,at){S={...n,dockOpen:S.dockOpen};save();fillSpecSelect();render();clearTimeout(ghTimer);ghPending=false;ghAt=new Date(at||Date.now());ghStat()}   /* podaci su upravo došli sa GitHub-a: ne šalju se nazad */
+async function ghSync(){   /* pri otvaranju: noviji podaci (GitHub ili pregledač) pobeđuju */
+  ghBusy=true;ghStat();let f;
+  try{f=await ghRead()}catch(e){ghBusy=false;ghPending=true;ghFail(e);ghStat();return}
+  ghBusy=false;ghAgain=false;
+  if(f&&!ghPending&&!sameData(f.state,S)&&f.savedAt>(Number(localStorage.getItem(KEY+'-at'))||0)){useState(f.state,f.savedAt);toast('Učitan je plan sa GitHub-a.')}
+  else if(ghPending||!f||!sameData(f.state,S))ghWrite();
+  else{ghAt=new Date(f.savedAt);ghStat()}
 }
-async function fConnect(){
-  if(!FILE_OK){toast('Automatsko čuvanje u datoteku radi u Chrome-u i Edge-u. Ovde koristite dugme „Sačuvaj“.');return}
-  let h;
-  try{h=await showSaveFilePicker({suggestedName:'planer-ordinacija.json',types:[{description:'Planer ordinacija',accept:{'application/json':['.json']}}]})}catch(e){return}   /* korisnik je odustao */
+function ghOpen(){
+  $('ghTok').value='';$('ghErr').textContent='';$('ghOff').hidden=!ghTok;$('ghOk').disabled=false;
+  $('ghTok').placeholder=ghTok?'Ključ je unet; nalepite novi samo za promenu':'github_pat_…';
+  $('dlgGh').showModal();$('ghTok').focus();
+}
+$('ghBtn').onclick=ghOpen;
+$('ghCancel').onclick=()=>$('dlgGh').close();
+$('ghOff').onclick=async()=>{
+  if(!await askConfirm('Prekini vezu sa GitHub-om','Izmene se više neće čuvati na GitHub-u, samo u ovom pregledaču. Plan koji je već na GitHub-u ostaje tamo.','Prekini vezu'))return;
+  ghTok='';try{localStorage.removeItem(GH_KEY)}catch(e){}
+  ghErr='';ghPending=false;clearInterval(ghRetry);ghRetry=null;clearTimeout(ghTimer);
+  if($('notice').dataset.kind==='gh')$('notice').hidden=true;
+  $('dlgGh').close();ghStat();toast('Veza sa GitHub-om je prekinuta.');
+};
+$('ghOk').onclick=async()=>{
+  const t=$('ghTok').value.trim();
+  if(!t){if(ghTok)$('dlgGh').close();else $('ghErr').textContent='Nalepite GitHub ključ.';return}
+  const old=ghTok;ghTok=t;$('ghOk').disabled=true;$('ghErr').textContent='Provera…';
   let f;
-  try{f=await fRead(h)}catch(e){toast(e.message+' Izaberite drugu datoteku.');return}
+  try{f=await ghRead()}catch(e){ghTok=old;$('ghOk').disabled=false;$('ghErr').textContent=e.status?ghWhy(e):e.message||ghWhy(e);return}
+  $('ghOk').disabled=false;$('dlgGh').close();
   let load=false;
   if(f&&!sameData(f.state,S)){
-    load=await askConfirm('Datoteka već ima podatke',`„${h.name}“ sadrži: ${f.state.docs.length} lekara, ${f.state.shifts.length} termina, ${f.state.holters.length} pacijenata za holtere, ${f.state.scopes.length} skopija.\n\nUčitati podatke iz datoteke, ili je zameniti onim što je sada u programu?`,'Učitaj iz datoteke','Zameni trenutnim');
-    if(load===null)return;   /* zatvoren prozor: ništa se ne menja */
+    load=await askConfirm('Na GitHub-u već postoji plan',`Plan na GitHub-u sadrži: ${f.state.docs.length} lekara, ${f.state.shifts.length} termina, ${f.state.holters.length} pacijenata za holtere, ${f.state.scopes.length} skopija.\n\nUčitati plan sa GitHub-a, ili ga zameniti onim što je sada u programu?`,'Učitaj sa GitHub-a','Zameni trenutnim');
+    if(load===null){ghTok=old;return}   /* zatvoren prozor: ništa se ne menja */
   }
-  fh=h;fErr=false;fNeedPerm=false;await putHandle(h);
-  if($('notice').dataset.kind==='file')$('notice').hidden=true;
-  if(load)useState(f.state);else fWrite();
-  toast('Svaka izmena se sada automatski čuva u „'+h.name+'“.');
-}
-$('fileBtn').onclick=async()=>{
-  if(fh&&!fNeedPerm&&!fErr&&!await askConfirm('Automatsko čuvanje',`Svaka izmena se automatski čuva u datoteku „${fh.name}“.\n\nŽelite li da izaberete drugu datoteku?`,'Izaberi drugu'))return;
-  if(fNeedPerm)return fGrant();
-  fConnect();
+  try{localStorage.setItem(GH_KEY,t)}catch(e){}
+  ghErr='';clearInterval(ghRetry);ghRetry=null;
+  if($('notice').dataset.kind==='gh')$('notice').hidden=true;
+  if(load)useState(f.state,f.savedAt);else ghWrite();
+  toast('Plan se sada automatski čuva na GitHub-u.');
 };
-async function fResume(){
-  fStat();
-  if(!FILE_OK)return;
-  const h=await getHandle();if(!h)return;
-  fh=h;
-  if(await h.queryPermission({mode:'readwrite'})==='granted')return fSync();
-  fNeedPerm=true;fStat();
-  showNotice('file',`Kliknite „Nastavi čuvanje“ da bi se izmene i dalje automatski čuvale u „${h.name}“.`,'Nastavi čuvanje',fGrant);
-}
-const fFlush=()=>{if(fh&&fPending&&!fNeedPerm)fWrite()};
-document.addEventListener('visibilitychange',()=>{if(document.hidden)fFlush()});
-window.addEventListener('beforeunload',e=>{   /* upozori ako poslednje izmene još nisu u datoteci */
-  fFlush();
-  if(fh&&(fBusy||fErr||(fNeedPerm&&fPending))){e.preventDefault();e.returnValue=''}
+window.addEventListener('beforeunload',e=>{   /* upozori ako poslednje izmene još nisu na GitHub-u */
+  if(ghTok&&(ghPending||ghBusy)){if(!ghBusy&&!ghErr)ghWrite();e.preventDefault();e.returnValue=''}
 });
 /* Enter confirms the open dialog (unless focus is on a button, which then does its own thing) */
-const PRIMARY={dlgSwap:'swSwap',dlgSk:'skOk',dlg:'dOk',dlgLate:'lOk',dlgHol:'hOk',dlgSlotSvc:'ssOk',dlgAsk:'aYes'};
+const PRIMARY={dlgGh:'ghOk',dlgSwap:'swSwap',dlgSk:'skOk',dlg:'dOk',dlgLate:'lOk',dlgHol:'hOk',dlgSlotSvc:'ssOk',dlgAsk:'aYes'};
 document.addEventListener('keydown',e=>{
   if(e.key!=='Enter'||e.isComposing||!e.target.closest)return;
   const d=e.target.closest('dialog'),id=d&&PRIMARY[d.id];
@@ -1121,7 +1147,7 @@ setDock(S.dockOpen,false);
 showToday();
 fillSpecSelect();
 render();
-fResume();
+ghStat();if(ghTok)ghSync();
 </script>
 </body>
 </html>
