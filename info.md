@@ -8,18 +8,102 @@ Kako se menja:
 
 # Patohistologija
 
+*Ispod svakog patologa su lekari iz bolnice koji mu šalju uzorke.*
+
 ## Aqualab
 
-Nalazi stižu na email.
+*Nalazi stižu na mail.*
 
 ### Dr Matilda Đolai — GIT, ginekologija
+- Dr P. Petrović
 
-Šalju:
-- Dr Petrović
-
-### Dr Sandra Trivunović — urologija
-
-Šalju:
-- Dr Paunel Popov
+### Dr Sandra Trivunović Dajko — urologija
+- Dr P. Popov
 - Dr B. Njegovan
 - Dr J. Đozić
+
+## Jugolab
+
+*Nalazi stižu na prijemni pult.*
+
+### Dr Nenad Šolajić — urologija, grudna hirurgija (i ex tempore)
+- Dr I. Kuhajda
+
+### Dr Tijana Vasiljević
+- Dr Lukić
+- Dr Đurić
+
+### Dr Nada Vučković — dermatologija i plastična hirurgija
+- Dr M. Kovačević
+
+### Prof. dr Mirjana Živojinov — uzorci jetre
+- Prof. dr S. Stojanović
+- Dr D. Grujić (endoskopije)
+
+**Kontakt za ex tempore:** 064 6445001
+
+## Beo-lab
+
+*Nalazi stižu na mail.*
+
+### Dr Nenad Mladenović — GIT
+- Dr S. Trbojević
+- Dr A. Baigerov
+
+### Ginekologija
+- Dr A. Babić
+- Dr L. Anđelić
+- Dr G. Mavrak
+
+### Opšta hirurgija
+- Dr A. Andrić
+- Dr M. Korica
+- Dr R. Ilić
+
+### Ortopedija
+- Dr V. Harhaji
+
+**Kontakt:** 011 3622444
+
+## PH dijagnostika
+
+*Nalazi stižu na prijemni pult.*
+
+### Dr Bratislav Stojiljković — ginekologija i onkologija
+- Ginekologija: Dr G. Malenković
+- Onkologija: Dr I. Majdevac
+
+### CORE biopsija
+- Dr J. Pilipović Grubor
+
+## Medlab
+
+*Nalazi stižu na mail.*
+
+- Bronhoskopije: Dr Svetlana Jovanović
+- Punkcije štitaste žlezde: Dr J. Mihailović, Dr B. Vuković
+- Endoskopije: Dr Zorana Gavrilović
+
+**Kontakt:** 065 4422332
+
+## Biotest
+
+*Nalazi stižu u laboratoriju (suteren).*
+
+### Dr Sandra Trivunović Dajko — urologija
+- Dr D. Jeremić
+
+### Mikrobiološka analiza endometrijuma, ispirka i bioptata
+
+**Kontakt:** 021 503724
+
+## Histocentar 021
+
+*Nalazi stižu na mail: info@newhospital.rs*
+
+### Dr Ćuk
+- Tonzilektomije: Dr V. Tovilović
+- NK ćelije: ginekologija
+- Imunohistohemija PD-L1
+
+**Kontakt:** 021 3003153
