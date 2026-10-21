@@ -66,7 +66,11 @@ select{font:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);bor
 .pick input:focus-visible+span{outline:2px solid var(--teal);outline-offset:2px}
 .row1{display:flex;gap:10px;align-items:end}
 .row1 label{flex:1}
-.io{display:flex;gap:8px;margin-left:auto}
+.io{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-left:auto}
+.io .btn span{color:inherit;font-size:inherit}
+.fstat{align-self:center;font-size:12px;color:var(--mute);white-space:nowrap}
+.fstat.ok::before{content:"\25CF";color:#2e8b57;margin-right:5px}
+.fstat.warn{color:var(--warn);font-weight:600}
 .io .btn{display:flex;align-items:center;gap:7px;padding:7px 13px}
 .btn.ghost.danger{color:var(--warn);border-color:#e3b9aa}
 .btn.ghost.danger:hover{background:#fbe9e3}
@@ -246,7 +250,7 @@ label{font-size:13px;color:var(--mute);display:grid;gap:4px}
   <div class="notice" id="notice" role="alert" hidden><span id="noticeText"></span><button class="btn" id="noticeBtn" type="button" hidden>Osveži podatke</button><button class="x" id="noticeX" type="button" aria-label="Zatvori">×</button></div>
   <header>
     <div class="hl"><h2>Ordinacije</h2><span class="today" id="today"></span></div>
-    <div class="io"><button class="btn ghost danger" id="clearBtn" type="button" title="Briše sve unete termine, holtere i skopije"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Obriši sve</button><button class="btn ghost" id="saveBtn" type="button" title="Sačuva sve (lekare, ordinacije, termine, usluge i holtere) u jednu datoteku"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/></svg>Sačuvaj</button><button class="btn ghost" id="loadBtn" type="button" title="Učita ranije sačuvanu datoteku i zameni trenutno stanje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 20h14"/></svg>Učitaj</button><input type="file" id="loadFile" accept=".json,application/json" hidden></div></header>
+    <div class="io"><span class="fstat" id="fileStat" role="status"></span><button class="btn ghost" id="fileBtn" type="button" title="Izaberite datoteku na računaru u koju se svaka izmena automatski čuva"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM9 3v5h6V3M9 14h7M9 17h5"/></svg><span id="fileLbl">Poveži datoteku</span></button><button class="btn ghost danger" id="clearBtn" type="button" title="Briše sve unete termine, holtere i skopije"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Obriši sve</button><button class="btn ghost" id="saveBtn" type="button" title="Sačuva sve (lekare, ordinacije, termine, usluge i holtere) u jednu datoteku"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/></svg>Sačuvaj</button><button class="btn ghost" id="loadBtn" type="button" title="Učita ranije sačuvanu datoteku i zameni trenutno stanje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 20h14"/></svg>Učitaj</button><input type="file" id="loadFile" accept=".json,application/json" hidden></div></header>
   <div class="ordarea"><div id="grid"></div></div>
   <section class="dock" id="dock" aria-label="Holteri i skopije">
     <button class="dockbar" id="dockBar" type="button" aria-expanded="false" aria-controls="dockBody" title="Prikaži ili sakrij holtere i skopije">
@@ -413,7 +417,8 @@ function showNotice(kind,text,btnLabel,onBtn){
   b.hidden=!btnLabel;if(btnLabel){b.textContent=btnLabel;b.onclick=onBtn}n.hidden=false;
 }
 const save=()=>{
-  try{localStorage.setItem(KEY,JSON.stringify(S));if(!storageOk){storageOk=true;if($('notice').dataset.kind==='storage')$('notice').hidden=true}}
+  fQueue();
+  try{localStorage.setItem(KEY,JSON.stringify(S));localStorage.setItem(KEY+'-at',String(Date.now()));if(!storageOk){storageOk=true;if($('notice').dataset.kind==='storage')$('notice').hidden=true}}
   catch(e){if(storageOk){storageOk=false;showNotice('storage',NO_STORAGE)}}
 };
 const $=id=>document.getElementById(id);
@@ -909,14 +914,111 @@ $('pdfNote').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.me
 
 /* ---- save / load everything as one JSON file ---- */
 function saveFile(){
-  const now=new Date(),pad=n=>String(n).padStart(2,'0');
-  const payload={app:'ordination-planner',version:2,savedAt:now.toISOString(),data:{docs:S.docs,shifts:S.shifts,holters:S.holters,scopes:S.scopes}};
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(filePayload(),null,2)],{type:'application/json'}));
   a.download=dayId()+'.json';
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   toast('Sačuvano u datoteku '+a.download);
 }
+const filePayload=()=>({app:'ordination-planner',version:2,savedAt:new Date().toISOString(),data:{docs:S.docs,shifts:S.shifts,holters:S.holters,scopes:S.scopes}});
+
+/* ---- automatsko čuvanje u datoteku na računaru (radi u Chrome-u i Edge-u) ---- */
+const FILE_OK='showSaveFilePicker' in window;
+let fh=null,fTimer=null,fPending=false,fBusy=false,fAgain=false,fErr=false,fNeedPerm=false,fAt=null;
+function idb(mode,fn){   /* veza sa datotekom se pamti u IndexedDB, da bi radila i posle zatvaranja programa */
+  return new Promise((res,rej)=>{
+    const o=indexedDB.open(KEY,1);o.onupgradeneeded=()=>o.result.createObjectStore('h');o.onerror=()=>rej(o.error);
+    o.onsuccess=()=>{try{const t=o.result.transaction('h',mode),r=fn(t.objectStore('h'));t.oncomplete=()=>res(r.result);t.onerror=()=>rej(t.error)}catch(e){rej(e)}};
+  });
+}
+const getHandle=()=>idb('readonly',s=>s.get('file')).catch(()=>null);
+const putHandle=h=>idb('readwrite',s=>s.put(h,'file')).catch(()=>{});
+const hhmm=d=>d.toLocaleTimeString('sr-Latn',{hour:'2-digit',minute:'2-digit'});
+function fStat(){
+  const s=$('fileStat');
+  $('fileLbl').textContent=fh?'Datoteka: '+fh.name:'Poveži datoteku';
+  let t='',k='';
+  if(!fh)t='Čuva se samo u pregledaču';
+  else if(fNeedPerm){t='Automatsko čuvanje je pauzirano';k='warn'}
+  else if(fErr){t='Čuvanje u datoteku nije uspelo';k='warn'}
+  else if(fPending||fBusy)t='Čuvanje…';
+  else if(fAt){t='Sačuvano u '+hhmm(fAt);k='ok'}
+  s.textContent=t;s.className='fstat '+k;
+}
+function fQueue(){
+  if(!fh)return;
+  fPending=true;clearTimeout(fTimer);fStat();
+  if(!fNeedPerm)fTimer=setTimeout(fWrite,300);
+}
+async function fWrite(){
+  clearTimeout(fTimer);
+  if(!fh||fNeedPerm)return;
+  if(fBusy){fAgain=true;return}
+  fBusy=true;fAgain=false;fPending=false;fStat();
+  try{const w=await fh.createWritable();await w.write(JSON.stringify(filePayload(),null,2));await w.close();fAt=new Date();
+    if(fErr){fErr=false;if($('notice').dataset.kind==='file')$('notice').hidden=true}}
+  catch(e){
+    fPending=true;
+    if(e.name==='NotAllowedError'){fNeedPerm=true;showNotice('file',`Pregledač traži dozvolu za čuvanje u „${fh.name}“.`,'Nastavi čuvanje',fGrant)}
+    else if(!fErr){fErr=true;showNotice('file',`Izmene nije moguće sačuvati u „${fh.name}“ (datoteka je možda premeštena ili otvorena u drugom programu). Podaci su i dalje sačuvani u pregledaču.`,'Izaberi datoteku',fConnect)}
+  }
+  fBusy=false;fStat();
+  if(fAgain)fWrite();
+}
+async function fGrant(){
+  try{if(await fh.requestPermission({mode:'readwrite'})==='granted'){fNeedPerm=false;$('notice').hidden=true;await fSync()}}catch(e){}
+  fStat();
+}
+async function fRead(h){   /* vraća {state,savedAt}, null za praznu datoteku; greška ako datoteka nije iz planera */
+  const t=(await (await h.getFile()).text()).trim();if(!t)return null;
+  let raw;try{raw=JSON.parse(t)}catch(e){throw new Error('Datoteka „'+h.name+'“ nije iz planera ordinacija.')}
+  if(!raw||raw.app!=='ordination-planner'||!raw.data)throw new Error('Datoteka „'+h.name+'“ nije iz planera ordinacija.');
+  return {state:normalizeState(raw.data).state,savedAt:Date.parse(raw.savedAt)||0};
+}
+const sameData=(a,b)=>['docs','shifts','holters','scopes'].every(k=>JSON.stringify(a[k])===JSON.stringify(b[k]));
+function useState(n){S={...n,dockOpen:S.dockOpen};save();fillSpecSelect();render()}
+async function fSync(){   /* posle ponovnog otvaranja: noviji podaci (pregledač ili datoteka) pobeđuju */
+  let f;
+  try{f=await fRead(fh)}catch(e){fErr=true;fStat();showNotice('file',e.name==='NotFoundError'?`Datoteka „${fh.name}“ više ne postoji ili je premeštena. Izaberite gde da se podaci čuvaju.`:e.message,'Izaberi datoteku',fConnect);return}
+  if(f&&!sameData(f.state,S)&&f.savedAt>(Number(localStorage.getItem(KEY+'-at'))||0)){useState(f.state);toast('Učitani su noviji podaci iz datoteke „'+fh.name+'“.')}
+  else fWrite();
+}
+async function fConnect(){
+  if(!FILE_OK){toast('Automatsko čuvanje u datoteku radi u Chrome-u i Edge-u. Ovde koristite dugme „Sačuvaj“.');return}
+  let h;
+  try{h=await showSaveFilePicker({suggestedName:'planer-ordinacija.json',types:[{description:'Planer ordinacija',accept:{'application/json':['.json']}}]})}catch(e){return}   /* korisnik je odustao */
+  let f;
+  try{f=await fRead(h)}catch(e){toast(e.message+' Izaberite drugu datoteku.');return}
+  let load=false;
+  if(f&&!sameData(f.state,S)){
+    load=await askConfirm('Datoteka već ima podatke',`„${h.name}“ sadrži: ${f.state.docs.length} lekara, ${f.state.shifts.length} termina, ${f.state.holters.length} pacijenata za holtere, ${f.state.scopes.length} skopija.\n\nUčitati podatke iz datoteke, ili je zameniti onim što je sada u programu?`,'Učitaj iz datoteke','Zameni trenutnim');
+    if(load===null)return;   /* zatvoren prozor: ništa se ne menja */
+  }
+  fh=h;fErr=false;fNeedPerm=false;await putHandle(h);
+  if($('notice').dataset.kind==='file')$('notice').hidden=true;
+  if(load)useState(f.state);else fWrite();
+  toast('Svaka izmena se sada automatski čuva u „'+h.name+'“.');
+}
+$('fileBtn').onclick=async()=>{
+  if(fh&&!fNeedPerm&&!fErr&&!await askConfirm('Automatsko čuvanje',`Svaka izmena se automatski čuva u datoteku „${fh.name}“.\n\nŽelite li da izaberete drugu datoteku?`,'Izaberi drugu'))return;
+  if(fNeedPerm)return fGrant();
+  fConnect();
+};
+async function fResume(){
+  fStat();
+  if(!FILE_OK)return;
+  const h=await getHandle();if(!h)return;
+  fh=h;
+  if(await h.queryPermission({mode:'readwrite'})==='granted')return fSync();
+  fNeedPerm=true;fStat();
+  showNotice('file',`Kliknite „Nastavi čuvanje“ da bi se izmene i dalje automatski čuvale u „${h.name}“.`,'Nastavi čuvanje',fGrant);
+}
+const fFlush=()=>{if(fh&&fPending&&!fNeedPerm)fWrite()};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)fFlush()});
+window.addEventListener('beforeunload',e=>{   /* upozori ako poslednje izmene još nisu u datoteci */
+  fFlush();
+  if(fh&&(fBusy||fErr||(fNeedPerm&&fPending))){e.preventDefault();e.returnValue=''}
+});
 /* Enter confirms the open dialog (unless focus is on a button, which then does its own thing) */
 const PRIMARY={dlgSwap:'swSwap',dlgSk:'skOk',dlg:'dOk',dlgLate:'lOk',dlgHol:'hOk',dlgSlotSvc:'ssOk',dlgAsk:'aYes'};
 document.addEventListener('keydown',e=>{
@@ -929,11 +1031,12 @@ async function okHours(...times){   /* upozorenje: vreme van radnog vremena */
   const bad=[...new Set(times.filter(t=>t<WORK_FROM||t>WORK_TO))];
   return !bad.length||askConfirm('Van radnog vremena',`Vreme ${bad.join(' i ')} je van radnog vremena (${WORK_FROM}–${WORK_TO}).\nSačuvati ipak?`,'Sačuvaj ipak');
 }
-function askConfirm(title,text,yes){
+function askConfirm(title,text,yes,no){
   return new Promise(res=>{
     const d=$('dlgAsk');$('aTitle').textContent=title;$('aText').textContent=text;$('aYes').textContent=yes||'Nastavi';
+    $('aNo').textContent=no||'Otkaži';
     const done=v=>{d.onclose=null;d.close();res(v)};
-    $('aYes').onclick=()=>done(true);$('aNo').onclick=()=>done(false);d.onclose=()=>res(false);d.showModal();
+    $('aYes').onclick=()=>done(true);$('aNo').onclick=()=>done(false);d.onclose=()=>res(null);d.showModal();   /* null: prozor zatvoren (Esc) */
   });
 }
 function normalizeState(d){
@@ -1018,6 +1121,7 @@ setDock(S.dockOpen,false);
 showToday();
 fillSpecSelect();
 render();
+fResume();
 </script>
 </body>
 </html>
