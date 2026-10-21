@@ -224,6 +224,30 @@ main header span{color:var(--mute);font-size:13px}
 .slot.late{box-shadow:inset 3px 0 0 var(--warn)}
 dialog{border:0;border-radius:12px;padding:20px;width:min(360px,92vw);box-shadow:0 20px 50px rgba(0,0,0,.25)}
 dialog::backdrop{background:rgba(20,35,36,.45)}
+aside h1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.infobtn{border:1px solid var(--line);background:#fff;color:var(--teal);border-radius:50%;width:30px;height:30px;padding:0;display:grid;place-items:center;flex:none}
+.infobtn:hover{background:var(--tealbg);border-color:var(--teal)}
+.infobtn svg{width:18px;height:18px}
+#dlgInfo{width:min(900px,94vw);height:min(600px,86vh);padding:0}
+#dlgInfo[open]{display:grid;grid-template-columns:230px minmax(0,1fr)}
+.inav{background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.inav h4{padding:18px 16px 10px}
+.inav ul{list-style:none;margin:0;padding:0 8px 12px;overflow:auto}
+.inav li button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 10px;border-radius:6px;font-weight:600}
+.inav li button:hover{background:#dbe3e1}
+.inav li button[aria-current=true]{background:var(--teal);color:#fff}
+.ipanel{position:relative;overflow:auto;padding:22px 26px;min-height:0}
+.ipanel h2{margin:0 36px 12px 0;font:600 22px Georgia,serif}
+.ipanel h3{margin:18px 0 6px;font-size:16px}
+.ipanel h4{margin:14px 0 4px;font-size:14px}
+.ipanel p,.ipanel ul,.ipanel ol{margin:0 0 10px}
+.ipanel ul,.ipanel ol{padding-left:22px}
+.ipanel a{color:var(--teal)}
+.ipanel p{color:var(--ink);font-size:15px;line-height:1.5}
+.ipanel li{margin-bottom:3px}
+.ipanel p.empty{color:var(--mute);font-style:italic}
+#infoX{position:absolute;top:14px;right:14px;font-size:22px}
+@media (max-width:640px){#dlgInfo[open]{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.inav{border-right:0;border-bottom:1px solid var(--line);max-height:35vh}}
 dialog h4{margin:0 0 2px;font:600 18px Georgia,serif}
 dialog p{margin:0 0 14px;color:var(--mute);font-size:13px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
@@ -237,7 +261,7 @@ label{font-size:13px;color:var(--mute);display:grid;gap:4px}
 </head>
 <body>
 <aside>
-  <h1>Lekari</h1>
+  <h1>Lekari<button class="infobtn" id="infoBtn" type="button" aria-label="Informacije" title="Informacije"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg></button></h1>
   <p class="sub">Prevucite lekara na ordinaciju.</p>
   <div class="search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>
@@ -376,6 +400,10 @@ label{font-size:13px;color:var(--mute);display:grid;gap:4px}
   <label>Token<input id="ghTok" type="password" autocomplete="off" spellcheck="false"></label>
   <div class="err" id="ghErr"></div>
   <div class="acts"><button class="btn ghost danger" id="ghOff" type="button" hidden>Prekini vezu</button><button class="btn ghost" id="ghCancel" type="button">Otkaži</button><button class="btn" id="ghOk" type="button">Poveži</button></div>
+</dialog>
+<dialog id="dlgInfo" aria-labelledby="infoT">
+  <nav class="inav"><h4 id="infoT">Informacije</h4><ul id="infoList"></ul></nav>
+  <section class="ipanel" id="infoPanel" aria-live="polite"></section>
 </dialog>
 <dialog id="dlgAsk"><h4 id="aTitle"></h4><p id="aText" style="white-space:pre-line"></p><div class="acts"><button class="btn ghost" id="aNo" type="button">Otkaži</button><button class="btn" id="aYes" type="button">Nastavi</button></div></dialog>
 <div id="tip" role="tooltip"></div>
@@ -1069,6 +1097,46 @@ $('ghOk').onclick=async()=>{
 window.addEventListener('beforeunload',e=>{   /* upozori ako poslednje izmene još nisu na GitHub-u */
   if(ghTok&&(ghPending||ghBusy)){if(!ghBusy&&!ghErr)ghWrite();e.preventDefault();e.returnValue=''}
 });
+/* ---- informacije: sadržaj je u info.md (u repozitoriji), svaki „# Naslov“ je jedna stavka ---- */
+const INFO_URL='https://raw.githubusercontent.com/milosgrbic/plk-planner/main/info.md',INFO_KEY=KEY+'-info';
+let infoItems=null,infoSel=0;
+function parseInfo(t){   /* sve pre prvog „# “ je uputstvo i ne prikazuje se */
+  const items=[];let cur=null;
+  t.replace(/\r/g,'').split('\n').forEach(l=>{const m=/^# +(.+)/.exec(l);if(m)items.push(cur={title:m[1].trim(),body:[]});else if(cur)cur.body.push(l)});
+  return items.map(x=>({title:x.title,body:x.body.join('\n').trim()}));
+}
+function mdHtml(t){   /* mali markdown: podnaslovi, spiskovi, pasusi, **podebljano**, *iskošeno*, [link](url) */
+  const inl=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\*(.+?)\*/g,'<i>$1</i>').replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  const out=[];let list=null,para=[];
+  const flush=()=>{if(para.length){out.push('<p>'+para.map(inl).join('<br>')+'</p>');para=[]}if(list){out.push(`<${list.t}>${list.i.map(x=>'<li>'+inl(x)+'</li>').join('')}</${list.t}>`);list=null}};
+  t.split('\n').forEach(l=>{
+    let m;
+    if(!l.trim())flush();
+    else if(m=/^(#{2,4}) +(.+)/.exec(l)){flush();const h=m[1].length+1;out.push(`<h${h}>${inl(m[2])}</h${h}>`)}
+    else if(m=/^\s*(?:([-*])|\d+[.)]) +(.+)/.exec(l)){const tg=m[1]?'ul':'ol';if(para.length||list&&list.t!==tg)flush();(list=list||{t:tg,i:[]}).i.push(m[2])}
+    else{if(list)flush();para.push(l.trim())}
+  });
+  flush();return out.join('');
+}
+function renderInfo(){
+  const items=infoItems||[];
+  $('infoList').innerHTML=items.map((x,i)=>`<li><button type="button" data-info="${i}" aria-current="${i===infoSel}">${esc(x.title)}</button></li>`).join('');
+  const x=items[infoSel];
+  $('infoPanel').innerHTML='<button class="x" id="infoX" type="button" aria-label="Zatvori">×</button>'+
+    (!infoItems?'<p class="empty">Učitavanje…</p>':!x?'<p class="empty">Informacije trenutno nisu dostupne.</p>':`<h2>${esc(x.title)}</h2>`+(x.body?mdHtml(x.body):'<p class="empty">Još nema sadržaja.</p>'));
+  $('infoX').onclick=()=>$('dlgInfo').close();
+}
+async function loadInfo(){   /* uvek najnovije sa GitHub-a; bez interneta poslednje učitano */
+  let t=null;
+  for(const u of ['info.md',INFO_URL]){try{const r=await fetch(u,{cache:'no-store'});if(r.ok){t=await r.text();break}}catch(e){}}
+  if(t!=null){try{localStorage.setItem(INFO_KEY,t)}catch(e){}}
+  else try{t=localStorage.getItem(INFO_KEY)}catch(e){}
+  infoItems=t?parseInfo(t):[];if(infoSel>=infoItems.length)infoSel=0;renderInfo();
+}
+$('infoBtn').onclick=()=>{renderInfo();$('dlgInfo').showModal();const b=$('infoList').querySelector('[aria-current=true]');if(b)b.focus();loadInfo()};
+$('infoList').onclick=e=>{const b=e.target.closest('[data-info]');if(b){infoSel=+b.dataset.info;renderInfo();$('infoList').querySelector(`[data-info="${infoSel}"]`).focus()}};
+$('dlgInfo').addEventListener('click',e=>{if(e.target===$('dlgInfo'))$('dlgInfo').close()});   /* klik pored prozora ga zatvara */
+
 /* Enter confirms the open dialog (unless focus is on a button, which then does its own thing) */
 const PRIMARY={dlgGh:'ghOk',dlgSwap:'swSwap',dlgSk:'skOk',dlg:'dOk',dlgLate:'lOk',dlgHol:'hOk',dlgSlotSvc:'ssOk',dlgAsk:'aYes'};
 document.addEventListener('keydown',e=>{
